@@ -134,6 +134,7 @@ engine = SwitchEngine(
 engine.afterburner_enabled = False
 
 main_event_loop: asyncio.AbstractEventLoop = None
+tray_icon_ref = None
 
 
 def broadcast_threadsafe(message: dict):
@@ -763,6 +764,10 @@ async def websocket_endpoint(websocket: WebSocket):
                     save_config(config)
                     await hub.broadcast({"type": "axis_calibration_updated", "axis_calibration": cal})
 
+            elif msg_type == "minimize_to_tray":
+                if tray_icon_ref is not None:
+                    tray_icon_ref.minimize_all_to_tray()
+
             elif msg_type == "apply_axis_calibration_xml":
                 cal = data.get("axis_calibration") or config.get("axis_calibration", {})
                 if isinstance(cal, dict):
@@ -826,7 +831,9 @@ def run_glassmorphism_app():
     sc_monitor.start()
     start_axis_streamer()
 
+    global tray_icon_ref
     tray = WarthogTrayIcon(on_open_dashboard=open_desktop_window)
+    tray_icon_ref = tray
     tray.start()
 
     def _bg_update_check():

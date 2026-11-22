@@ -3609,3 +3609,9 @@ window.addEventListener('DOMContentLoaded', () => {
   syncAxisCalControlsUI();
   setTimeout(drawCurveCanvas, 250);
 });
+
+function minimizeToTray() {
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({ type: 'minimize_to_tray' }));
+  }
+}
