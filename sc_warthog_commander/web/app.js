@@ -2141,6 +2141,7 @@ function renderMatrixRows() {
     countBadge.textContent = `${visibleCount} ${visibleCount === 1 ? 'ação' : 'ações'}`;
   }
   renderVisualMapping();
+  if (typeof renderVoiceCalloutsEditor === 'function') renderVoiceCalloutsEditor();
 }
 
 function populateMatrix(mappings) {
@@ -3692,7 +3693,10 @@ function getResolvedVoicePhrase(actionId) {
     return String(custom).trim();
   }
   const bank = VOICE_CALLOUTS[voiceSettings.lang] || VOICE_CALLOUTS.en;
-  return bank[actionId] || '';
+  if (bank[actionId]) return bank[actionId];
+  const m = (typeof cachedMatrixMappings === 'object' && cachedMatrixMappings) ? cachedMatrixMappings[actionId] : null;
+  if (m && m.desc) return m.desc.split('(')[0].replace(/\[.*?\]/g, '').trim();
+  return '';
 }
 
 function isVoiceEventMuted(actionId) {
@@ -3703,12 +3707,23 @@ function renderVoiceCalloutsEditor() {
   const cont = document.getElementById('voice-callouts-editor-list');
   if (!cont) return;
   const q = (document.getElementById('voice-callouts-search')?.value || '').trim().toLowerCase();
-  const bank = VOICE_CALLOUTS[voiceSettings.lang] || VOICE_CALLOUTS.en;
-  const keys = Object.keys(VOICE_EVENT_LABELS);
+  // Combine ALL ship events + ALL mapped actions (19 Stick, 32 Throttle, Hats, Shift Layer, Profiles)
+  const keySet = new Set(Object.keys(VOICE_EVENT_LABELS));
+  if (typeof cachedMatrixMappings === 'object' && cachedMatrixMappings) {
+    Object.keys(cachedMatrixMappings).forEach(k => keySet.add(k));
+  }
+  if (typeof STICK_VISUAL_GROUPS !== 'undefined') {
+    STICK_VISUAL_GROUPS.forEach(g => g.items.forEach(it => { if (!it.isAxis && it.actionId) keySet.add(it.actionId); }));
+  }
+  if (typeof THROTTLE_VISUAL_GROUPS !== 'undefined') {
+    THROTTLE_VISUAL_GROUPS.forEach(g => g.items.forEach(it => { if (!it.isAxis && it.actionId) keySet.add(it.actionId); }));
+  }
+  const keys = Array.from(keySet);
 
   const rows = [];
   for (const k of keys) {
-    const label = VOICE_EVENT_LABELS[k] || k;
+    const m = (cachedMatrixMappings && cachedMatrixMappings[k]) || null;
+    const label = VOICE_EVENT_LABELS[k] || (m && m.desc) || k;
     const phrase = getResolvedVoicePhrase(k);
     const muted = isVoiceEventMuted(k);
     const isCustom = Boolean((voiceSettings.custom_callouts || {})[k]);
