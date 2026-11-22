@@ -1120,20 +1120,35 @@
 
         <!-- TAB 5: AXES, CURVES & SLEW -->
     <div id="tab-axes" class="tab-content">
-      <div style="max-width: 900px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; gap: 16px;">
+      <div style="max-width: 1020px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; gap: 16px;">
         
-        <!-- Axis Response Curve Visualizer -->
-        <div class="glass-panel hud-brackets" style="padding: 20px;">
-          <div class="deck-section-title">Curvas de Resposta de Voo (S-Curves / Exponencial)</div>
-          <p style="font-size: 13px; color: var(--text-secondary); margin: 6px 0 16px 0;">
-            Compensa a mola central do manche Warthog para mira precisa em dogfight, mantendo os propulsores da manete lineares (1.0) sem zonas mortas artificiais.
-          </p>
-
-          <div style="display: grid; grid-template-columns: 240px 1fr; gap: 24px; align-items: center;">
+        <!-- Axis Response Curve & Anti-Drift Calibration Studio (X, Y, Z) -->
+        <div class="glass-panel hud-brackets" style="padding: 18px 20px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 12px;">
             <div>
-              <div style="margin-bottom: 14px;">
-                <label style="font-size: 11px; color: var(--text-dim); text-transform: uppercase;">Tipo de Curva:</label>
-                <select id="select-curve-type" onchange="changeCurveType(this.value)" style="width: 100%; background: #060b14; border: 1px solid rgba(0,210,255,0.3); color: #fff; padding: 6px 10px; border-radius: 4px; font-family: var(--font-hud); font-size: 13px; margin-top: 4px;">
+              <div class="deck-section-title" style="margin: 0;">🎯 Curvas Individuais (X, Y, Z) & Remoção de Drift</div>
+              <p style="font-size: 12px; color: var(--text-secondary); margin-top: 3px;">
+                Ajusta a curva, saturação e zona morta anti-drift de cada eixo em separado e aplica diretamente ao <code>actionmaps.xml</code> do Star Citizen.
+              </p>
+            </div>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+              <button class="btn-secondary" style="border-color: rgba(240,164,38,0.5); color: var(--mil-amber);" onclick="autoCalibrateAxisDrift()" title="Lê o desvio atual em repouso e define automaticamente a zona morta mínima anti-drift">🎯 Auto-Calibrar Anti-Drift</button>
+              <button class="btn-glow" style="padding: 6px 14px; font-size: 11px;" onclick="applyAxisCalibrationToSC()">⚡ Aplicar X/Y/Z ao Star Citizen</button>
+            </div>
+          </div>
+
+          <!-- X / Y / Z Axis Selector Tabs -->
+          <div style="display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap;">
+            <button id="axis-tab-x" class="deck-filter-btn active" onclick="selectCalibrationAxis('x')">EIXO X — ROLL (js1_x)</button>
+            <button id="axis-tab-y" class="deck-filter-btn" onclick="selectCalibrationAxis('y')">EIXO Y — PITCH (js1_y)</button>
+            <button id="axis-tab-z" class="deck-filter-btn" onclick="selectCalibrationAxis('z')">EIXO Z — YAW / THRUST (js1_z / js2_z)</button>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 290px 1fr; gap: 22px; align-items: center;">
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+              <div>
+                <label style="font-family: var(--font-mono); font-size: 10.5px; color: var(--sc-cyan); text-transform: uppercase;">Tipo de Curva (<span id="cal-axis-label">EIXO X</span>):</label>
+                <select id="select-curve-type" class="form-input" onchange="onAxisCalControlChanged()" style="width: 100%; margin-top: 4px;">
                   <option value="expo">Curva Exponencial (Expo Dogfight)</option>
                   <option value="s_curve">Curva-S Sigmoide (Suave no Centro)</option>
                   <option value="linear">Linear (Padrão 1:1)</option>
@@ -1141,18 +1156,44 @@
               </div>
 
               <div>
-                <label style="font-size: 11px; color: var(--text-dim); text-transform: uppercase;">Expoente de Sensibilidade:</label>
+                <label style="font-family: var(--font-mono); font-size: 10.5px; color: var(--sc-cyan); text-transform: uppercase;">Expoente / Sensibilidade:</label>
                 <div style="display: flex; align-items: center; gap: 10px; margin-top: 4px;">
-                  <input type="range" id="slider-exponent" min="10" max="30" value="18" oninput="changeCurveExponent(this.value / 10)">
-                  <span id="label-exponent" style="font-size: 14px; font-weight: bold; color: var(--neon-cyan); min-width: 30px;">1.8</span>
+                  <input type="range" id="slider-exponent" min="10" max="35" value="18" style="flex: 1;" oninput="onAxisCalControlChanged()">
+                  <span id="label-exponent" style="font-family: var(--font-mono); font-size: 13px; font-weight: bold; color: var(--sc-cyan); min-width: 36px;">1.8</span>
                 </div>
               </div>
+
+              <div>
+                <label style="font-family: var(--font-mono); font-size: 10.5px; color: var(--mil-amber); text-transform: uppercase;">Zona Morta Anti-Drift (Centro):</label>
+                <div style="display: flex; align-items: center; gap: 10px; margin-top: 4px;">
+                  <input type="range" id="slider-axis-deadzone" min="0" max="25" value="3" style="flex: 1;" oninput="onAxisCalControlChanged()">
+                  <span id="label-axis-deadzone" style="font-family: var(--font-mono); font-size: 13px; font-weight: bold; color: var(--mil-amber); min-width: 36px;">3%</span>
+                </div>
+              </div>
+
+              <div>
+                <label style="font-family: var(--font-mono); font-size: 10.5px; color: var(--sc-cyan); text-transform: uppercase;">Saturação Máxima (Limite):</label>
+                <div style="display: flex; align-items: center; gap: 10px; margin-top: 4px;">
+                  <input type="range" id="slider-axis-saturation" min="50" max="100" value="100" style="flex: 1;" oninput="onAxisCalControlChanged()">
+                  <span id="label-axis-saturation" style="font-family: var(--font-mono); font-size: 13px; font-weight: bold; color: var(--sc-cyan); min-width: 42px;">100%</span>
+                </div>
+              </div>
+
+              <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 12.5px; font-weight: 600; color: #fff;">
+                <input type="checkbox" id="chk-axis-invert" onchange="onAxisCalControlChanged()" style="width: 16px; height: 16px; accent-color: var(--mil-amber);">
+                Inverter Direção deste Eixo
+              </label>
             </div>
 
-            <!-- Curve Canvas Graph -->
-            <div style="display: flex; flex-direction: column; align-items: center;">
-              <canvas id="curve-canvas" width="360" height="180" style="background: rgba(0,0,0,0.5); border: 1px solid rgba(0,210,255,0.25); border-radius: 4px; box-shadow: inset 0 0 15px rgba(0,210,255,0.05);"></canvas>
-              <div style="font-size: 11px; color: var(--text-dim); margin-top: 6px;">Gráfico de Resposta: Entrada Física (X) vs Deflexão no Jogo (Y)</div>
+            <!-- Live Curve & Anti-Drift Canvas Graph -->
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+              <canvas id="curve-canvas" width="440" height="220" style="background: rgba(4,9,15,0.82); border: 1px solid rgba(72,220,255,0.28); box-shadow: inset 0 0 20px rgba(72,220,255,0.08); max-width: 100%;"></canvas>
+              <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; max-width: 440px; font-family: var(--font-mono); font-size: 11px; background: rgba(5,10,16,0.75); border: 1px solid rgba(72,220,255,0.16); padding: 6px 10px;">
+                <span>RAW: <strong id="cal-live-raw" style="color: var(--sc-cyan);">0.0%</strong></span>
+                <span>SAÍDA FILTRADA: <strong id="cal-live-out" style="color: var(--mil-green);">0.0%</strong></span>
+                <span id="cal-drift-badge" class="key-badge" style="font-size: 10px; color: var(--mil-green); border-color: rgba(56,226,157,0.5);">✅ ZERO DRIFT</span>
+              </div>
+              <div style="font-size: 10.5px; color: var(--text-dim);">Faixa Âmbar = Zona Morta Anti-Drift • Ponto Branco = Posição Real do Joystick em Tempo Real</div>
             </div>
           </div>
         </div>
@@ -1487,6 +1528,6 @@
 
   
 
-  <script src="app.js?v=5.4.2"></script>
+  <script src="app.js?v=5.5.0"></script>
 </body>
 </html>

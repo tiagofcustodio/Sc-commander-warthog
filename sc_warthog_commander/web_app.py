@@ -42,7 +42,8 @@ from actionmaps_fixer import (
     get_mappings_dir,
     diagnose_actionmaps,
     fix_actionmaps,
-    create_backup
+    create_backup,
+    apply_axis_calibration_to_xml
 )
 from profile_generator import write_profile_to_sc
 from hotas_devices import HOTAS_KITS_META
@@ -754,6 +755,30 @@ async def websocket_endpoint(websocket: WebSocket):
                 ce = data.get("exponent", 1.8)
                 config["curve_exponent"] = ce
                 save_config(config)
+
+            elif msg_type == "save_axis_calibration":
+                cal = data.get("axis_calibration")
+                if isinstance(cal, dict):
+                    config["axis_calibration"] = cal
+                    save_config(config)
+                    await hub.broadcast({"type": "axis_calibration_updated", "axis_calibration": cal})
+
+            elif msg_type == "apply_axis_calibration_xml":
+                cal = data.get("axis_calibration") or config.get("axis_calibration", {})
+                if isinstance(cal, dict):
+                    config["axis_calibration"] = cal
+                    save_config(config)
+                if sc_live:
+                    xml_p = get_actionmaps_path(sc_live)
+                    ok, msg = apply_axis_calibration_to_xml(xml_p, cal)
+                else:
+                    ok, msg = False, "Pasta StarCitizen LIVE não encontrada — calibração guardada no config.json."
+                await hub.broadcast({
+                    "type": "log",
+                    "timestamp": time.strftime("%H:%M:%S"),
+                    "text": f"Calibração X/Y/Z: {msg}",
+                    "key_hit": "✅ ANTI-DRIFT XML" if ok else "💾 GUARDADO LOCAL"
+                })
 
     except WebSocketDisconnect:
         hub.disconnect(websocket)

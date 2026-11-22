@@ -55,6 +55,12 @@ DEFAULT_VOICE_SETTINGS = {
     "volume": 0.85
 }
 
+DEFAULT_AXIS_CALIBRATION = {
+    "x": {"curve_type": "expo", "exponent": 1.8, "deadzone": 3, "saturation": 100, "invert": False},
+    "y": {"curve_type": "expo", "exponent": 1.8, "deadzone": 3, "saturation": 100, "invert": False},
+    "z": {"curve_type": "expo", "exponent": 1.5, "deadzone": 4, "saturation": 100, "invert": False},
+}
+
 DEFAULT_CONFIG = {
     "star_citizen_live_path": DEFAULT_SC_PATH,
     "pulse_hold_ms": 60,
@@ -74,7 +80,8 @@ DEFAULT_CONFIG = {
     "voice_settings": DEFAULT_VOICE_SETTINGS,
     "selected_hotas_kit": "warthog",
     "auto_check_updates": True,
-    "update_source": "tiagofcustodio/Sc-commander-warthog"
+    "update_source": "tiagofcustodio/Sc-commander-warthog",
+    "axis_calibration": DEFAULT_AXIS_CALIBRATION
 }
 
 def load_config() -> dict:

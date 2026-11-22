@@ -530,6 +530,10 @@ function handleServerMessage(data) {
       onUpdateApplied(data);
       break;
 
+    case 'axis_calibration_updated':
+      applyAxisCalibrationData(data.axis_calibration);
+      break;
+
     case 'update_status':
       renderGitHubUpdateStatus(data);
       break;
@@ -1679,6 +1683,7 @@ function applyProfileData(profileId, profileData) {
 
 // Live Axis Telemetry (Throttle Z, Rz, Slider1 + Slew X/Y + Stick X/Y)
 function updateAxisTelemetry(data) {
+  updateLiveAxisForCalibration(data);
   // 1. Slew Radar
   if (data.slew_x !== undefined && data.slew_y !== undefined) {
     const dot = document.getElementById('radar-slew-dot');
@@ -3375,4 +3380,232 @@ function onUpdateApplied(data) {
 window.addEventListener('DOMContentLoaded', () => {
   renderHotasKitsGrid();
   renderDetectedUsbList();
+});
+
+
+// ==============================================================================
+// INDIVIDUAL X / Y / Z AXIS CURVES & ANTI-DRIFT CALIBRATION STUDIO
+// ==============================================================================
+let selectedCalAxis = 'x';
+let axisCalibration = {
+  x: { curve_type: 'expo', exponent: 1.8, deadzone: 3, saturation: 100, invert: false },
+  y: { curve_type: 'expo', exponent: 1.8, deadzone: 3, saturation: 100, invert: false },
+  z: { curve_type: 'expo', exponent: 1.5, deadzone: 4, saturation: 100, invert: false }
+};
+let liveAxisNorm = { x: 0.0, y: 0.0, z: 0.0 };
+
+function applyAxisCalibrationData(cal) {
+  if (!cal) return;
+  ['x', 'y', 'z'].forEach(ax => {
+    if (cal[ax]) axisCalibration[ax] = { ...axisCalibration[ax], ...cal[ax] };
+  });
+  syncAxisCalControlsUI();
+  drawCurveCanvas();
+}
+
+function selectCalibrationAxis(ax) {
+  if (!axisCalibration[ax]) return;
+  selectedCalAxis = ax;
+  ['x', 'y', 'z'].forEach(k => {
+    const btn = document.getElementById('axis-tab-' + k);
+    if (btn) btn.classList.toggle('active', k === ax);
+  });
+  const lbl = document.getElementById('cal-axis-label');
+  if (lbl) lbl.textContent = 'EIXO ' + ax.toUpperCase();
+  syncAxisCalControlsUI();
+  drawCurveCanvas();
+}
+
+function syncAxisCalControlsUI() {
+  const cfg = axisCalibration[selectedCalAxis] || axisCalibration.x;
+  const selType = document.getElementById('select-curve-type');
+  const slExp = document.getElementById('slider-exponent');
+  const lbExp = document.getElementById('label-exponent');
+  const slDz = document.getElementById('slider-axis-deadzone');
+  const lbDz = document.getElementById('label-axis-deadzone');
+  const slSat = document.getElementById('slider-axis-saturation');
+  const lbSat = document.getElementById('label-axis-saturation');
+  const chkInv = document.getElementById('chk-axis-invert');
+
+  if (selType) selType.value = cfg.curve_type || 'expo';
+  if (slExp) slExp.value = Math.round((cfg.exponent || 1.8) * 10);
+  if (lbExp) lbExp.textContent = Number(cfg.exponent || 1.8).toFixed(1);
+  if (slDz) slDz.value = Math.round(cfg.deadzone ?? 3);
+  if (lbDz) lbDz.textContent = Math.round(cfg.deadzone ?? 3) + '%';
+  if (slSat) slSat.value = Math.round(cfg.saturation ?? 100);
+  if (lbSat) lbSat.textContent = Math.round(cfg.saturation ?? 100) + '%';
+  if (chkInv) chkInv.checked = !!cfg.invert;
+}
+
+function onAxisCalControlChanged() {
+  const cfg = axisCalibration[selectedCalAxis];
+  cfg.curve_type = document.getElementById('select-curve-type')?.value || 'expo';
+  cfg.exponent = parseFloat(document.getElementById('slider-exponent')?.value || '18') / 10.0;
+  cfg.deadzone = parseInt(document.getElementById('slider-axis-deadzone')?.value || '3', 10);
+  cfg.saturation = parseInt(document.getElementById('slider-axis-saturation')?.value || '100', 10);
+  cfg.invert = !!document.getElementById('chk-axis-invert')?.checked;
+
+  syncAxisCalControlsUI();
+  drawCurveCanvas();
+
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({ type: 'save_axis_calibration', axis_calibration: axisCalibration }));
+  }
+}
+
+function evalAxisCurve(normIn, cfg) {
+  let x = Math.max(-1, Math.min(1, normIn));
+  if (cfg.invert) x = -x;
+  const dz = Math.max(0, Math.min(0.45, (cfg.deadzone || 0) / 100.0));
+  const sat = Math.max(0.5, Math.min(1.0, (cfg.saturation || 100) / 100.0));
+  const absX = Math.abs(x);
+  if (absX <= dz) return 0.0;
+
+  let t = Math.min(1.0, (absX - dz) / Math.max(0.01, sat - dz));
+  const exp = cfg.exponent || 1.8;
+  let mag = t;
+  if (cfg.curve_type === 'expo') {
+    mag = Math.pow(t, exp);
+  } else if (cfg.curve_type === 's_curve') {
+    mag = t < 0.5
+      ? 0.5 * Math.pow(2 * t, exp)
+      : 1 - 0.5 * Math.pow(2 * (1 - t), exp);
+  }
+  return Math.sign(x) * mag;
+}
+
+function updateLiveAxisForCalibration(data) {
+  if (!data) return;
+  if (data.stick_x !== undefined) liveAxisNorm.x = (data.stick_x - 32767.5) / 32767.5;
+  if (data.stick_y !== undefined) liveAxisNorm.y = (data.stick_y - 32767.5) / 32767.5;
+  if (data.thr_z !== undefined)   liveAxisNorm.z = (data.thr_z - 32767.5) / 32767.5;
+
+  const axesTab = document.getElementById('tab-axes');
+  if (axesTab && axesTab.classList.contains('active')) {
+    drawCurveCanvas();
+  }
+}
+
+function autoCalibrateAxisDrift() {
+  initAudio();
+  playCockpitSound('chirp');
+  const rawPct = Math.abs(liveAxisNorm[selectedCalAxis] || 0) * 100.0;
+  // Sets deadzone to current idle drift + 2% safety margin (clamped 2%..20%)
+  const recommended = Math.min(20, Math.max(2, Math.ceil(rawPct) + 2));
+  axisCalibration[selectedCalAxis].deadzone = recommended;
+  syncAxisCalControlsUI();
+  drawCurveCanvas();
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({ type: 'save_axis_calibration', axis_calibration: axisCalibration }));
+  }
+  appendLog(new Date().toTimeString().slice(0, 8), `Auto-Calibração Anti-Drift [EIXO ${selectedCalAxis.toUpperCase()}]`, `Deadzone ajustada para ${recommended}% (Desvio medido: ${rawPct.toFixed(1)}%)`);
+}
+
+function applyAxisCalibrationToSC() {
+  initAudio();
+  playCockpitSound('chirp');
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({ type: 'apply_axis_calibration_xml', axis_calibration: axisCalibration }));
+  }
+}
+
+// Override drawCurveCanvas with full bipolar (-100%..+100%) X/Y/Z Anti-Drift Visualizer
+function drawCurveCanvas() {
+  const canvas = document.getElementById('curve-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width;
+  const h = canvas.height;
+  const cfg = axisCalibration[selectedCalAxis] || axisCalibration.x;
+
+  ctx.clearRect(0, 0, w, h);
+
+  // Subtle Grid
+  ctx.strokeStyle = 'rgba(72, 220, 255, 0.12)';
+  ctx.lineWidth = 1;
+  for (let i = 1; i < 8; i++) {
+    ctx.beginPath(); ctx.moveTo((w / 8) * i, 0); ctx.lineTo((w / 8) * i, h); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, (h / 8) * i); ctx.lineTo(w, (h / 8) * i); ctx.stroke();
+  }
+
+  // Center Axes
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
+  ctx.beginPath(); ctx.moveTo(w / 2, 0); ctx.lineTo(w / 2, h); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0, h / 2); ctx.lineTo(w, h / 2); ctx.stroke();
+
+  // Anti-Drift Deadzone Band (Amber shaded center zone)
+  const dzFrac = (cfg.deadzone || 0) / 100.0;
+  const dzPx = dzFrac * (w / 2);
+  if (dzPx > 0.5) {
+    ctx.fillStyle = 'rgba(240, 164, 38, 0.16)';
+    ctx.fillRect(w / 2 - dzPx, 0, dzPx * 2, h);
+    ctx.strokeStyle = 'rgba(240, 164, 38, 0.55)';
+    ctx.setLineDash([4, 3]);
+    ctx.beginPath(); ctx.moveTo(w / 2 - dzPx, 0); ctx.lineTo(w / 2 - dzPx, h); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(w / 2 + dzPx, 0); ctx.lineTo(w / 2 + dzPx, h); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // Linear reference diagonal
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.14)';
+  ctx.setLineDash([3, 4]);
+  ctx.beginPath(); ctx.moveTo(0, h); ctx.lineTo(w, 0); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Actual Axis Curve (-1..+1)
+  ctx.strokeStyle = selectedCalAxis === 'z' ? '#f0a426' : '#48dcff';
+  ctx.lineWidth = 2.5;
+  ctx.shadowColor = selectedCalAxis === 'z' ? 'rgba(240,164,38,0.6)' : 'rgba(72,220,255,0.6)';
+  ctx.shadowBlur = 8;
+  ctx.beginPath();
+  for (let px = 0; px <= w; px += 2) {
+    const nx = (px / w) * 2 - 1;
+    const ny = evalAxisCurve(nx, cfg);
+    const py = h / 2 - ny * (h / 2 - 8);
+    if (px === 0) ctx.moveTo(px, py);
+    else ctx.lineTo(px, py);
+  }
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  // Live Hardware Position Pip
+  const rawVal = liveAxisNorm[selectedCalAxis] || 0;
+  const outVal = evalAxisCurve(rawVal, cfg);
+  const dotX = ((rawVal + 1) / 2) * w;
+  const dotY = h / 2 - outVal * (h / 2 - 8);
+
+  ctx.fillStyle = '#ffffff';
+  ctx.strokeStyle = '#38e29d';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(dotX, dotY, 5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+
+  // Update live readouts & drift badge
+  const rawEl = document.getElementById('cal-live-raw');
+  const outEl = document.getElementById('cal-live-out');
+  const badgeEl = document.getElementById('cal-drift-badge');
+  if (rawEl) rawEl.textContent = (rawVal * 100).toFixed(1) + '%';
+  if (outEl) outEl.textContent = (outVal * 100).toFixed(1) + '%';
+  if (badgeEl) {
+    if (Math.abs(outVal) < 0.001) {
+      badgeEl.textContent = '✅ ZERO DRIFT';
+      badgeEl.style.color = 'var(--mil-green)';
+      badgeEl.style.borderColor = 'rgba(56,226,157,0.5)';
+    } else if (Math.abs(rawVal) < 0.15) {
+      badgeEl.textContent = '⚠️ DRIFT DETETADO';
+      badgeEl.style.color = 'var(--mil-amber)';
+      badgeEl.style.borderColor = 'rgba(240,164,38,0.6)';
+    } else {
+      badgeEl.textContent = '🕹️ EM MOVIMENTO';
+      badgeEl.style.color = 'var(--sc-cyan)';
+      badgeEl.style.borderColor = 'rgba(72,220,255,0.5)';
+    }
+  }
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  syncAxisCalControlsUI();
+  setTimeout(drawCurveCanvas, 250);
 });

@@ -466,3 +466,61 @@ def restore_backup(backup_path: str, target_xml_path: str) -> Tuple[bool, str]:
         return True, f"Backup restaurado com sucesso a partir de {os.path.basename(backup_path)}"
     except Exception as e:
         return False, f"Falha ao restaurar backup: {e}"
+
+
+
+def apply_axis_calibration_to_xml(xml_path: str, axis_cal: dict) -> tuple[bool, str]:
+    """
+    Aplica as curvas individuais (exponent) e zonas mortas anti-drift (deadzone)
+    dos eixos X (Roll), Y (Pitch) e Z (Yaw) diretamente no actionmaps.xml do Star Citizen.
+    """
+    if not xml_path or not os.path.exists(xml_path):
+        return False, "Ficheiro actionmaps.xml do Star Citizen não encontrado."
+
+    try:
+        create_backup(xml_path)
+        tree = ET.parse(xml_path)
+        root = tree.getroot()
+        profile = root.find(".//ActionProfiles") or root
+
+        # Encontra <options type="joystick" instance="1"> (Stick)
+        opt_stick = None
+        for opt in profile.findall("options[@type='joystick']"):
+            if opt.get("instance") == "1":
+                opt_stick = opt
+                break
+        if opt_stick is None:
+            opt_stick = ET.SubElement(profile, "options", {"type": "joystick", "instance": "1"})
+
+        axis_tag_map = {
+            "x": "flight_move_roll",
+            "y": "flight_move_pitch",
+            "z": "flight_move_yaw",
+        }
+
+        for ax_key, xml_tag in axis_tag_map.items():
+            cfg = axis_cal.get(ax_key)
+            if not isinstance(cfg, dict):
+                continue
+            el = opt_stick.find(xml_tag)
+            if el is None:
+                el = ET.SubElement(opt_stick, xml_tag)
+
+            ctype = str(cfg.get("curve_type", "expo"))
+            exp_val = 1.0 if ctype == "linear" else max(1.0, min(3.5, float(cfg.get("exponent", 1.8))))
+            dz_val = max(0.0, min(0.30, float(cfg.get("deadzone", 3)) / 100.0))
+            inv_val = "1" if cfg.get("invert", False) else "0"
+
+            el.set("exponent", f"{exp_val:.2f}")
+            el.set("deadzone", f"{dz_val:.3f}")
+            el.set("invert", inv_val)
+
+        tree.write(xml_path, encoding="utf-8", xml_declaration=False)
+        return True, (
+            f"Curvas e Anti-Drift aplicados ao Star Citizen XML "
+            f"(X:{axis_cal.get('x',{}).get('deadzone',3)}% | Y:{axis_cal.get('y',{}).get('deadzone',3)}% | Z:{axis_cal.get('z',{}).get('deadzone',4)}%)."
+        )
+    except PermissionError:
+        return False, "Sem permissão de escrita em actionmaps.xml (executa o run.bat como Administrador)."
+    except Exception as e:
+        return False, f"Erro ao aplicar curvas ao XML: {e}"
