@@ -571,6 +571,7 @@ async def websocket_endpoint(websocket: WebSocket):
                         "id": mid,
                         "name": str(macro.get("name", mid)).strip(),
                         "icon": str(macro.get("icon", "⚡")).strip() or "⚡",
+                        "voice_text": str(macro.get("voice_text", "")).strip(),
                         "steps": macro.get("steps", [])
                     }
                     engine.update_macros(macros_dict)
@@ -606,12 +607,17 @@ async def websocket_endpoint(websocket: WebSocket):
 
             elif msg_type == "save_voice_settings":
                 vs = data.get("voice_settings", {})
+                prev_vs = config.get("voice_settings", {})
+                custom_map = vs.get("custom_callouts", prev_vs.get("custom_callouts", {}))
+                muted_list = vs.get("muted_callouts", prev_vs.get("muted_callouts", []))
                 config["voice_settings"] = {
                     "enabled": bool(vs.get("enabled", True)),
                     "lang": str(vs.get("lang", "en")),
                     "rate": float(vs.get("rate", 1.05)),
                     "pitch": float(vs.get("pitch", 0.85)),
                     "volume": float(vs.get("volume", 0.85)),
+                    "custom_callouts": custom_map if isinstance(custom_map, dict) else {},
+                    "muted_callouts": muted_list if isinstance(muted_list, list) else [],
                 }
                 save_config(config)
                 await hub.broadcast({"type": "voice_settings_updated", "voice_settings": config["voice_settings"]})

@@ -52,7 +52,9 @@ DEFAULT_VOICE_SETTINGS = {
     "lang": "en",
     "rate": 1.05,
     "pitch": 0.85,
-    "volume": 0.85
+    "volume": 0.85,
+    "custom_callouts": {},
+    "muted_callouts": []
 }
 
 DEFAULT_AXIS_CALIBRATION = {

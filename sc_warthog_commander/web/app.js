@@ -2552,6 +2552,7 @@ function createNewMacro() {
   document.getElementById('macro-editing-id').textContent = editingMacroId;
   document.getElementById('macro-input-icon').value = '⚡';
   document.getElementById('macro-input-name').value = 'Nova Sequência Tática';
+  const vEl = document.getElementById('macro-input-voice'); if (vEl) vEl.value = '';
   renderMacroSteps();
 }
 
@@ -2566,6 +2567,8 @@ function openMacroEditor(macroId) {
   if (iconEl) iconEl.value = m.icon || '⚡';
   const nameEl = document.getElementById('macro-input-name');
   if (nameEl) nameEl.value = m.name || '';
+  const voiceEl = document.getElementById('macro-input-voice');
+  if (voiceEl) voiceEl.value = m.voice_text || '';
   renderMacroSteps();
 }
 
@@ -2610,6 +2613,7 @@ function saveCurrentMacro() {
     id: editingMacroId,
     icon: (document.getElementById('macro-input-icon')?.value || '⚡').trim(),
     name: (document.getElementById('macro-input-name')?.value || 'Macro Personalizada').trim(),
+    voice_text: (document.getElementById('macro-input-voice')?.value || '').trim(),
     steps: editingMacroSteps.filter(s => s.key && s.key.trim())
   };
   cachedMacros[macro.id] = macro;
@@ -3615,3 +3619,238 @@ function minimizeToTray() {
     ws.send(JSON.stringify({ type: 'minimize_to_tray' }));
   }
 }
+
+
+// ==============================================================================
+// CUSTOMIZABLE SHIP AI VOICE PHRASES EDITOR (EDIT EVERY CALLOUT & MUTE TOGGLE)
+// ==============================================================================
+const VOICE_EVENT_LABELS = {
+  APU_ON: 'APU START — Flight Ready',
+  APU_OFF: 'APU OFF — Desligar Sistemas',
+  EAC_ON: 'EAC ARM — Master Mode NAV',
+  EAC_OFF: 'EAC OFF — Master Mode SCM',
+  RDR_ALTM_ON: 'RDR ALTM NRM — Recolher Trem',
+  RDR_ALTM_OFF: 'RDR ALTM DIS — Baixar Trem',
+  FLAPS_DN: 'FLAPS DOWN — Modo VTOL',
+  FLAPS_MID: 'FLAPS MID — Voo Normal',
+  FLAPS_UP: 'FLAPS UP — Cruise Control',
+  BOAT_FWD: 'BOAT FWD — Quantum Spool',
+  BOAT_AFT: 'BOAT AFT — Modo Armas',
+  BOAT_MID: 'BOAT MID — Neutro',
+  SPDBRK_FWD: 'SPEEDBRAKE FWD — Cruise ON',
+  SPDBRK_AFT: 'SPEEDBRAKE AFT — Space Brake',
+  SPDBRK_MID: 'SPEEDBRAKE MID — Cruise OFF',
+  PINKY_FWD: 'PINKY FWD — Faróis ON',
+  PINKY_AFT: 'PINKY AFT — Luzes Cabine',
+  PINKY_MID: 'PINKY MID — Faróis OFF',
+  LDGHORN_PRESS: 'BTN 21 LDGH — Chamar ATC',
+  AP_ENGAGE_PRESS: 'BTN 26 APENG — Chamar ATC',
+  AP_PATH: 'AP PATH — Abrir Portas',
+  AP_ALT: 'AP ALT — Trancar Portas',
+  AP_MID: 'AP MID — Fechar Portas',
+  SHIFT_MODIFIER_ON: 'S4 PINKY — Camada Shift',
+  FUEL_L_ON: 'FUEL LEFT ON — Propulsores ON',
+  FUEL_L_OFF: 'FUEL LEFT OFF — Propulsores OFF',
+  FUEL_R_ON: 'FUEL RIGHT ON — Armas ON',
+  FUEL_R_OFF: 'FUEL RIGHT OFF — Armas OFF',
+  ENG_L_IGN: 'ENG L IGN — Limpar Visor',
+  ENG_L_MOTOR: 'ENG L MOTOR — Motor Esq. OFF',
+  ENG_L_NORM: 'ENG L NORM — Motor Esq. ON',
+  ENG_R_IGN: 'ENG R IGN — Ejeção Emergência',
+  ENG_R_MOTOR: 'ENG R MOTOR — Armas OFF',
+  ENG_R_NORM: 'ENG R NORM — Armas ON',
+  IDLE_L_OFF: 'IDLE CUTOFF ESQ — Corte Motor',
+  IDLE_R_OFF: 'IDLE CUTOFF DIR — Corte Motor',
+  IDLE_L_IDLE: 'IDLE READY ESQ — Motor Pronto',
+  IDLE_R_IDLE: 'IDLE READY DIR — Motor Pronto',
+  LTB_PRESS: 'LTB — Flight Ready / Autoland',
+  CHINA_FWD_PRESS: 'CHINA FWD — Boost / Afterburner',
+  CHINA_AFT_PRESS: 'CHINA AFT — Propulsão Invertida',
+  MIC_UP_PRESS: 'MIC UP — Modo Scan',
+  MIC_DOWN_PRESS: 'MIC DOWN — Modo Mineração',
+  MIC_RIGHT_PRESS: 'MIC RIGHT — Câmara Exterior',
+  SLEW_PUSH_PRESS: 'SLEW PUSH — Igualar Velocidade',
+  TRIM_HAT_UP: 'TRIM UP — Energia Propulsores',
+  TRIM_HAT_RIGHT: 'TRIM RIGHT — Energia Escudos',
+  TRIM_HAT_LEFT: 'TRIM LEFT — Energia Armas',
+  TRIM_HAT_DOWN: 'TRIM DOWN — Equilibrar Energia',
+  STICK_BTN_2: 'S2 — Míssil Armado',
+  STICK_BTN_5: 'S1 — Master Mode',
+  STICK_BTN_11: 'DMS UP — Ping de Radar',
+  STICK_BTN_15: 'CMS UP — Noise / Chaff',
+  STICK_BTN_17: 'CMS DOWN — Decoy / Flare',
+  STICK_BTN_19: 'CMS PUSH — Salva de Pânico',
+  PROF_combat: 'PERFIL — Combate',
+  PROF_mining: 'PERFIL — Mineração',
+  PROF_cargo: 'PERFIL — Carga',
+  PROF_ground: 'PERFIL — Terrestre'
+};
+
+function getResolvedVoicePhrase(actionId) {
+  const custom = (voiceSettings.custom_callouts || {})[actionId];
+  if (custom !== undefined && custom !== null && String(custom).trim() !== '') {
+    return String(custom).trim();
+  }
+  const bank = VOICE_CALLOUTS[voiceSettings.lang] || VOICE_CALLOUTS.en;
+  return bank[actionId] || '';
+}
+
+function isVoiceEventMuted(actionId) {
+  return Array.isArray(voiceSettings.muted_callouts) && voiceSettings.muted_callouts.includes(actionId);
+}
+
+function renderVoiceCalloutsEditor() {
+  const cont = document.getElementById('voice-callouts-editor-list');
+  if (!cont) return;
+  const q = (document.getElementById('voice-callouts-search')?.value || '').trim().toLowerCase();
+  const bank = VOICE_CALLOUTS[voiceSettings.lang] || VOICE_CALLOUTS.en;
+  const keys = Object.keys(VOICE_EVENT_LABELS);
+
+  const rows = [];
+  for (const k of keys) {
+    const label = VOICE_EVENT_LABELS[k] || k;
+    const phrase = getResolvedVoicePhrase(k);
+    const muted = isVoiceEventMuted(k);
+    const isCustom = Boolean((voiceSettings.custom_callouts || {})[k]);
+    if (q && !label.toLowerCase().includes(q) && !k.toLowerCase().includes(q) && !phrase.toLowerCase().includes(q)) {
+      continue;
+    }
+    const safePhrase = phrase.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+    rows.push(`
+      <div style="display:flex; align-items:center; gap:6px; padding:6px 8px; background:rgba(6,12,20,0.75); border:1px solid ${isCustom ? 'rgba(240,164,38,0.45)' : 'rgba(72,220,255,0.14)'}; opacity:${muted ? '0.45' : '1'};">
+        <input type="checkbox" ${muted ? '' : 'checked'} onchange="toggleVoiceCalloutMute('${k}', !this.checked)" title="Ativar/Silenciar este aviso" style="accent-color:var(--sc-cyan); cursor:pointer;">
+        <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:3px;">
+          <div style="font-family:var(--font-mono); font-size:9.5px; color:${isCustom ? 'var(--mil-amber)' : 'var(--sc-cyan)'}; display:flex; justify-content:space-between;">
+            <span>${label}</span>
+            <span style="color:var(--text-dim);">${k}</span>
+          </div>
+          <input type="text" class="form-input" style="padding:3px 7px; font-size:11px; width:100%;" value="${safePhrase}" placeholder="Escreve a frase falada pela nave..." onchange="updateCustomVoiceCallout('${k}', this.value)">
+        </div>
+        <button class="btn-secondary" style="padding:4px 7px; font-size:11px; flex-shrink:0;" onclick="speakShipAI(getResolvedVoicePhrase('${k}'), true)" title="Ouvir esta frase">🔊</button>
+      </div>
+    `);
+  }
+  cont.innerHTML = rows.join('') || '<div style="font-size:11px; color:var(--text-dim); padding:8px;">Nenhum evento encontrado.</div>';
+}
+
+function updateCustomVoiceCallout(actionId, newText) {
+  if (!voiceSettings.custom_callouts) voiceSettings.custom_callouts = {};
+  const trimmed = (newText || '').trim();
+  const defTxt = (VOICE_CALLOUTS[voiceSettings.lang] || VOICE_CALLOUTS.en)[actionId] || '';
+  if (!trimmed || trimmed === defTxt) {
+    delete voiceSettings.custom_callouts[actionId];
+  } else {
+    voiceSettings.custom_callouts[actionId] = trimmed;
+  }
+  persistVoiceSettingsNow();
+  renderVoiceCalloutsEditor();
+}
+
+function toggleVoiceCalloutMute(actionId, isMuted) {
+  if (!Array.isArray(voiceSettings.muted_callouts)) voiceSettings.muted_callouts = [];
+  const set = new Set(voiceSettings.muted_callouts);
+  if (isMuted) set.add(actionId); else set.delete(actionId);
+  voiceSettings.muted_callouts = Array.from(set);
+  persistVoiceSettingsNow();
+  renderVoiceCalloutsEditor();
+}
+
+function resetAllVoiceCallouts() {
+  if (!confirm('Restaurar todas as frases personalizadas do computador de bordo para o padrão?')) return;
+  voiceSettings.custom_callouts = {};
+  voiceSettings.muted_callouts = [];
+  persistVoiceSettingsNow();
+  renderVoiceCalloutsEditor();
+  speakShipAI(voiceSettings.lang === 'pt' ? 'Frases padrão restauradas.' : 'Default voice bank restored.', true);
+}
+
+function persistVoiceSettingsNow() {
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({ type: 'save_voice_settings', voice_settings: voiceSettings }));
+  }
+}
+
+// Override handlers to honor custom_callouts, muted_callouts, and macro.voice_text
+function applyVoiceSettings(vs) {
+  if (!vs) return;
+  voiceSettings = {
+    custom_callouts: {},
+    muted_callouts: [],
+    ...voiceSettings,
+    ...vs
+  };
+  const chk = document.getElementById('chk-voice-enabled');
+  const sel = document.getElementById('select-voice-lang');
+  const vol = document.getElementById('slider-voice-volume');
+  const rate = document.getElementById('slider-voice-rate');
+  const pitch = document.getElementById('slider-voice-pitch');
+  if (chk) chk.checked = !!voiceSettings.enabled;
+  if (sel) sel.value = voiceSettings.lang || 'en';
+  if (vol) { vol.value = Math.round((voiceSettings.volume ?? 0.85) * 100); document.getElementById('lbl-voice-vol').textContent = vol.value + '%'; }
+  if (rate) { rate.value = Math.round((voiceSettings.rate ?? 1.05) * 100); document.getElementById('lbl-voice-rate').textContent = (rate.value / 100).toFixed(2) + 'x'; }
+  if (pitch) { pitch.value = Math.round((voiceSettings.pitch ?? 0.85) * 100); document.getElementById('lbl-voice-pitch').textContent = (pitch.value / 100).toFixed(2); }
+  renderVoiceCalloutsEditor();
+}
+
+function onVoiceSettingChanged() {
+  voiceSettings = {
+    ...voiceSettings,
+    enabled: !!document.getElementById('chk-voice-enabled')?.checked,
+    lang: document.getElementById('select-voice-lang')?.value || 'en',
+    volume: (parseInt(document.getElementById('slider-voice-volume')?.value || '85', 10)) / 100,
+    rate: (parseInt(document.getElementById('slider-voice-rate')?.value || '105', 10)) / 100,
+    pitch: (parseInt(document.getElementById('slider-voice-pitch')?.value || '85', 10)) / 100
+  };
+  applyVoiceSettings(voiceSettings);
+  persistVoiceSettingsNow();
+}
+
+function triggerShipVoiceForAction(actionId, desc) {
+  if (!voiceSettings.enabled || !actionId) return;
+  const cleanId = actionId.replace(/_LONG$/, '');
+  if (isVoiceEventMuted(cleanId)) return;
+
+  if (cleanId.startsWith('MACRO:')) {
+    const mid = cleanId.slice(6);
+    const mac = cachedMacros[mid];
+    if (mac && mac.voice_text && mac.voice_text.trim()) {
+      speakShipAI(mac.voice_text.trim());
+      return;
+    }
+    const msg = voiceSettings.lang === 'pt'
+      ? `A executar macro ${mac ? mac.name.split('(')[0] : ''}`
+      : `Executing macro ${mac ? mac.name.split('(')[0] : ''}`;
+    speakShipAI(msg);
+    return;
+  }
+
+  const phrase = getResolvedVoicePhrase(cleanId);
+  if (phrase) {
+    speakShipAI(phrase);
+    return;
+  }
+
+  const m = cachedMatrixMappings[cleanId];
+  const fallbackDesc = (m && m.desc) || desc || '';
+  if (fallbackDesc && !cleanId.startsWith('SPDBRK_RELEASE')) {
+    const shortTxt = fallbackDesc.split('(')[0].replace(/\[.*?\]/g, '').trim();
+    if (shortTxt) speakShipAI(shortTxt);
+  }
+}
+
+function announceProfileVoice(profileId) {
+  if (!voiceSettings.enabled) return;
+  const key = 'PROF_' + profileId;
+  if (isVoiceEventMuted(key)) return;
+  const phrase = getResolvedVoicePhrase(key);
+  if (phrase) speakShipAI(phrase);
+}
+
+function testShipVoice(actionId) {
+  const phrase = getResolvedVoicePhrase(actionId) || 'Aegis combat computer online.';
+  speakShipAI(phrase, true);
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  renderVoiceCalloutsEditor();
+});

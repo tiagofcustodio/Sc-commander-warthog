@@ -1283,7 +1283,7 @@
       
         <!-- TAB 6: MACROS MULTI-PASSO & COMPUTADOR DE BORDO AI (VOZ) -->
         <div id="tab-macros" class="tab-content">
-          <div style="display: grid; grid-template-columns: 1.25fr 0.75fr; gap: 16px; flex: 1; min-height: 0; overflow: hidden;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; flex: 1; min-height: 0; overflow: hidden;">
 
             <!-- COLUNA ESQUERDA: EDITOR DE MACROS -->
             <div class="glass-panel hud-brackets" style="padding: 16px; display: flex; flex-direction: column; gap: 12px; min-height: 0; overflow: hidden;">
@@ -1314,6 +1314,11 @@
                   <input type="text" id="macro-input-name" class="form-input" placeholder="Nome da Macro (ex: Aterragem Completa)">
                 </div>
 
+                <div style="display: flex; gap: 6px; align-items: center;">
+                  <input type="text" id="macro-input-voice" class="form-input" style="flex: 1; font-size: 11px; padding: 5px 9px;" placeholder="🔊 Frase personalizada de Voz AI ao executar esta Macro (opcional)...">
+                  <button class="btn-secondary" style="padding: 4px 8px; font-size: 11px;" onclick="speakShipAI(document.getElementById('macro-input-voice').value || document.getElementById('macro-input-name').value, true)" title="Ouvir frase da macro">🔊</button>
+                </div>
+
                 <div id="macro-steps-container" style="flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; padding-right: 4px;">
                   <!-- Passos da Macro -->
                 </div>
@@ -1329,7 +1334,7 @@
             </div>
 
             <!-- COLUNA DIREITA: COMPUTADOR DE BORDO POR VOZ (SHIP AI VOICE) -->
-            <div class="glass-panel hud-brackets" style="padding: 16px; display: flex; flex-direction: column; gap: 14px; overflow-y: auto;">
+            <div class="glass-panel hud-brackets" style="padding: 16px; display: flex; flex-direction: column; gap: 10px; min-height: 0; overflow: hidden;">
               <div>
                 <div class="deck-section-title" style="margin: 0;">🔊 Computador de Bordo (Ship AI Voice)</div>
                 <p style="font-size: 12px; color: var(--text-secondary); margin-top: 3px;">
@@ -1371,12 +1376,17 @@
                 <button class="btn-secondary" style="flex: 1;" onclick="testShipVoice('FLAPS_DN')">🔊 VTOL</button>
               </div>
 
-              <div style="background: rgba(5,10,16,0.7); border: 1px solid rgba(72,220,255,0.14); padding: 10px 12px; font-family: var(--font-mono); font-size: 11px; color: var(--text-secondary); line-height: 1.6;">
-                <div style="color: var(--mil-amber); margin-bottom: 4px; font-weight: 700;">EVENTOS ANUNCIADOS AUTOMATICAMENTE:</div>
-                • Mudança de Perfil (Combate / Mineração / Carga / Terrestre)<br>
-                • Trem de Aterragem (RDR ALTM) & Modo VTOL (Flaps)<br>
-                • Master Modes (SCM / NAV / Quantum) & Flight Ready (APU)<br>
-                • Faróis (Pinky), Torre ATC (LDGH), Shift Layer & Macros
+              <div style="display: flex; flex-direction: column; gap: 8px; flex: 1; min-height: 220px; border-top: 1px solid rgba(72,220,255,0.18); padding-top: 10px; overflow: hidden;">
+                <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;">
+                  <span style="font-family: var(--font-mono); font-size: 11px; font-weight: 700; color: var(--mil-amber); letter-spacing: 0.8px;">✏️ PERSONALIZAR FRASES DO COMPUTADOR DE BORDO</span>
+                  <button class="btn-secondary" style="padding: 3px 8px; font-size: 10.5px; color: var(--mil-amber); border-color: rgba(240,164,38,0.45);" onclick="resetAllVoiceCallouts()">🔄 Restaurar Padrão</button>
+                </div>
+
+                <input type="text" id="voice-callouts-search" class="form-input" style="font-size: 11px; padding: 5px 10px;" placeholder="🔍 Filtrar evento (ex: Trem, VTOL, APU, Quantum, Perfil, Míssil...)" oninput="renderVoiceCalloutsEditor()">
+
+                <div id="voice-callouts-editor-list" style="flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; padding-right: 4px;">
+                  <!-- Preenchido dinamicamente via app.js -->
+                </div>
               </div>
             </div>
 
@@ -1533,6 +1543,6 @@
 
   
 
-  <script src="app.js?v=5.5.1"></script>
+  <script src="app.js?v=5.5.2"></script>
 </body>
 </html>
