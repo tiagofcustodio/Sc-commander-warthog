@@ -1,0 +1,1769 @@
+/* ==========================================================================
+   WARTHOG SC COMMANDER 5.2 — STAR CITIZEN UEE / AEGIS MILITARY-GRADE GLASS
+   Frosted Gunmetal Glass • 45° MFD Chamfers • Hologram Cyan & Avionics Amber
+   ========================================================================== */
+
+:root {
+  /* Deep Space & Anodized Gunmetal Surfaces */
+  --bg-void: #05080d;
+  --bg-base: #091018;
+  --bg-elevated: #0f1924;
+
+  /* Star Citizen Military-Grade Frosted Glass */
+  --glass-bg: rgba(11, 19, 28, 0.72);
+  --glass-bg-heavy: rgba(8, 14, 22, 0.88);
+  --glass-bg-hover: rgba(18, 32, 46, 0.84);
+  --glass-border: rgba(112, 198, 226, 0.18);
+  --glass-border-amber: rgba(240, 164, 38, 0.34);
+  --glass-specular: inset 0 1px 0 rgba(175, 236, 255, 0.12);
+  --glass-shadow: 0 12px 34px rgba(0, 0, 0, 0.56);
+
+  /* Star Citizen UEE / Aegis Military HUD Palette */
+  --sc-cyan: #48dcff;             /* Star Citizen MFD / mobiGlas Cyan */
+  --sc-cyan-dim: rgba(72, 220, 255, 0.14);
+  --sc-cyan-glow: rgba(72, 220, 255, 0.42);
+
+  --mil-amber: #f0a426;           /* Aegis / A-10C Military Avionics Amber */
+  --mil-amber-dim: rgba(240, 164, 38, 0.15);
+  --mil-amber-glow: rgba(240, 164, 38, 0.44);
+
+  --mil-green: #38e29d;           /* Systems Nominal / Shields Emerald */
+  --mil-red: #ff3b5c;             /* Master Caution / Ordnance Red */
+  --mil-hud: var(--sc-cyan);
+
+  /* Compatibility Aliases for Existing Inline Styles & JS */
+  --neon-cyan: var(--sc-cyan);
+  --neon-cyan-glow: var(--sc-cyan-glow);
+  --neon-amber: var(--mil-amber);
+  --neon-amber-glow: var(--mil-amber-glow);
+  --neon-green: var(--mil-green);
+  --neon-red: var(--mil-red);
+
+  /* Typography */
+  --text-primary: #eef6fa;
+  --text-secondary: #92adb8;
+  --text-dim: #556c78;
+
+  --font-display: 'Orbitron', 'Rajdhani', sans-serif;
+  --font-hud: 'Rajdhani', 'Segoe UI', system-ui, sans-serif;
+  --font-mono: 'Share Tech Mono', 'Consolas', monospace;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+  background-color: var(--bg-void);
+  color: var(--text-primary);
+  font-family: var(--font-hud);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Star Citizen Deep Space Cockpit Backdrop + Micro-Grid + Subtle MFD Scanlines */
+body {
+  background-image:
+    radial-gradient(ellipse 75% 55% at 12% 8%, rgba(72, 220, 255, 0.085) 0%, transparent 58%),
+    radial-gradient(ellipse 65% 50% at 90% 88%, rgba(240, 164, 38, 0.075) 0%, transparent 56%),
+    radial-gradient(circle at 50% 50%, rgba(12, 24, 38, 0.55) 0%, rgba(5, 8, 13, 0.95) 100%),
+    repeating-linear-gradient(0deg, rgba(160, 225, 255, 0.016) 0px, rgba(160, 225, 255, 0.016) 1px, transparent 1px, transparent 3px),
+    linear-gradient(rgba(72, 220, 255, 0.032) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(72, 220, 255, 0.032) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 100% 100%, 100% 3px, 32px 32px, 32px 32px;
+}
+
+/* Precision Tactical Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(5, 9, 14, 0.6);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(72, 220, 255, 0.25);
+  border-radius: 1px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(240, 164, 38, 0.65);
+}
+
+/* ==========================================================================
+   APP SHELL — LEFT UEE COMMAND RAIL + MAIN MFD WORKSPACE
+   ========================================================================== */
+.app-shell {
+  display: grid;
+  grid-template-columns: 256px 1fr;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+}
+
+/* ---------------- LEFT UEE MILITARY SIDEBAR ---------------- */
+.mil-sidebar {
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(180deg, rgba(9, 16, 24, 0.88) 0%, rgba(6, 11, 17, 0.94) 100%);
+  backdrop-filter: blur(20px) saturate(145%);
+  -webkit-backdrop-filter: blur(20px) saturate(145%);
+  border-right: 1px solid rgba(72, 220, 255, 0.22);
+  box-shadow: 6px 0 32px rgba(0, 0, 0, 0.6), inset -1px 0 0 rgba(72, 220, 255, 0.08);
+  padding: 14px 12px;
+  gap: 14px;
+  z-index: 20;
+  overflow-y: auto;
+  position: relative;
+}
+
+/* Vertical cyan telemetry rail stripe */
+.mil-sidebar::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 3px;
+  height: 100%;
+  background: linear-gradient(180deg, var(--sc-cyan) 0%, rgba(72, 220, 255, 0.15) 45%, rgba(240, 164, 38, 0.35) 100%);
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.mil-brand {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 10px 10px 14px 10px;
+  border-bottom: 1px solid rgba(72, 220, 255, 0.18);
+  position: relative;
+}
+
+.mil-brand::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 48px;
+  height: 2px;
+  background: var(--mil-amber);
+  box-shadow: 0 0 8px var(--mil-amber-glow);
+}
+
+.logo-shield {
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  background: linear-gradient(135deg, rgba(72, 220, 255, 0.18), rgba(240, 164, 38, 0.14));
+  border: 1px solid rgba(72, 220, 255, 0.55);
+  clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px));
+  box-shadow: 0 0 16px rgba(72, 220, 255, 0.25), var(--glass-specular);
+  flex-shrink: 0;
+}
+
+.brand-text h1 {
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: #ffffff;
+  text-shadow: 0 0 12px rgba(72, 220, 255, 0.35);
+  line-height: 1.2;
+}
+
+.mil-version-tag {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  color: var(--mil-amber);
+  background: rgba(240, 164, 38, 0.12);
+  border: 1px solid rgba(240, 164, 38, 0.42);
+  padding: 1px 6px;
+  margin-top: 4px;
+  letter-spacing: 1px;
+  clip-path: polygon(0 0, calc(100% - 5px) 0, 100% 5px, 100% 100%, 0 100%);
+}
+
+.mil-sidebar-section-label {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 1.6px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  padding: 0 6px 4px 6px;
+  margin-bottom: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(72, 220, 255, 0.08);
+}
+
+.mil-sidebar-section-label span:last-child {
+  color: var(--sc-cyan);
+  opacity: 0.7;
+}
+
+/* Sidebar Navigation (Star Citizen MFD Angled Buttons) */
+.mil-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 12px;
+  background: rgba(15, 26, 38, 0.42);
+  border: 1px solid rgba(72, 220, 255, 0.10);
+  border-left: 2px solid rgba(72, 220, 255, 0.22);
+  clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
+  color: var(--text-secondary);
+  font-family: var(--font-hud);
+  font-size: 13.5px;
+  font-weight: 600;
+  letter-spacing: 0.6px;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.tab-btn .nav-idx {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-dim);
+  min-width: 18px;
+}
+
+.tab-btn:hover {
+  background: rgba(72, 220, 255, 0.10);
+  border-color: rgba(72, 220, 255, 0.35);
+  color: #ffffff;
+  transform: translateX(2px);
+}
+
+.tab-btn.active {
+  background: linear-gradient(90deg, rgba(72, 220, 255, 0.22) 0%, rgba(72, 220, 255, 0.05) 100%);
+  border-color: rgba(72, 220, 255, 0.55);
+  border-left: 3px solid var(--sc-cyan);
+  color: #ffffff;
+  box-shadow: var(--glass-specular), 0 0 18px rgba(72, 220, 255, 0.18);
+  text-shadow: 0 0 8px rgba(72, 220, 255, 0.45);
+}
+
+.tab-btn.active .nav-idx {
+  color: var(--mil-amber);
+}
+
+/* Mission Profile Selector (2x2 Star Citizen Master Mode Grid) */
+.profile-selector-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(72, 220, 255, 0.12);
+}
+
+.profile-pills {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.prof-pill {
+  padding: 7px 6px;
+  background: rgba(10, 18, 26, 0.72);
+  border: 1px solid rgba(72, 220, 255, 0.16);
+  clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 6px 100%, 0 calc(100% - 6px));
+  color: var(--text-secondary);
+  font-family: var(--font-hud);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  text-align: center;
+}
+
+.prof-pill:hover {
+  border-color: rgba(240, 164, 38, 0.55);
+  color: #ffffff;
+  background: rgba(240, 164, 38, 0.10);
+}
+
+.prof-pill.active {
+  background: linear-gradient(135deg, rgba(240, 164, 38, 0.24), rgba(240, 164, 38, 0.08));
+  border-color: var(--mil-amber);
+  color: #ffffff;
+  box-shadow: 0 0 14px rgba(240, 164, 38, 0.28), var(--glass-specular);
+}
+
+/* Hardware Link Telemetry Footer */
+.hardware-pods {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(72, 220, 255, 0.12);
+}
+
+.pod-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: rgba(7, 13, 20, 0.78);
+  border: 1px solid rgba(72, 220, 255, 0.14);
+  clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 0 100%);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.7px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.pod-badge:hover {
+  border-color: rgba(72, 220, 255, 0.45);
+  background: rgba(16, 28, 40, 0.88);
+}
+
+.pod-badge .orb {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--mil-red);
+  box-shadow: 0 0 8px rgba(255, 59, 92, 0.75);
+  flex-shrink: 0;
+}
+
+.pod-badge.online {
+  border-color: rgba(56, 226, 157, 0.45);
+  background: rgba(56, 226, 157, 0.07);
+  color: var(--text-primary);
+}
+.pod-badge.online .orb {
+  background: var(--mil-green);
+  box-shadow: 0 0 10px rgba(56, 226, 157, 0.9);
+}
+
+.sidebar-footer-actions {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.sound-toggle {
+  padding: 6px 8px;
+  background: rgba(72, 220, 255, 0.10);
+  border: 1px solid rgba(72, 220, 255, 0.38);
+  clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 0 100%);
+  color: var(--sc-cyan);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+.sound-toggle:hover {
+  background: rgba(72, 220, 255, 0.22);
+  color: #ffffff;
+}
+
+/* ---------------- RIGHT MAIN WORKSPACE ---------------- */
+.mil-workspace {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* Top Star Citizen MFD Status Strip */
+.mil-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 20px;
+  background: linear-gradient(90deg, rgba(10, 18, 28, 0.86) 0%, rgba(8, 14, 22, 0.78) 100%);
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  border-bottom: 1px solid rgba(72, 220, 255, 0.22);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), var(--glass-specular);
+  gap: 16px;
+  flex-shrink: 0;
+  position: relative;
+}
+
+/* Tactical diagonal hatch accent on topbar bottom edge */
+.mil-topbar::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 20px;
+  width: 140px;
+  height: 2px;
+  background: linear-gradient(90deg, var(--sc-cyan), var(--mil-amber), transparent);
+}
+
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.topbar-kicker {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--mil-amber);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  padding: 3px 9px;
+  background: rgba(240, 164, 38, 0.14);
+  border: 1px solid rgba(240, 164, 38, 0.45);
+  clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 6px 100%, 0 calc(100% - 6px));
+}
+
+.topbar-title {
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  color: #ffffff;
+  text-shadow: 0 0 10px rgba(72, 220, 255, 0.25);
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--text-secondary);
+}
+
+.mil-stamp {
+  padding: 3px 9px;
+  border: 1px solid rgba(72, 220, 255, 0.20);
+  background: rgba(6, 12, 18, 0.65);
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: var(--text-secondary);
+  clip-path: polygon(0 0, calc(100% - 5px) 0, 100% 5px, 100% 100%, 0 100%);
+}
+
+/* Alert Strip (Shift Layer / Afterburner) */
+.hud-alert-strip {
+  padding: 6px 18px;
+  background: repeating-linear-gradient(-45deg, rgba(240, 164, 38, 0.24), rgba(240, 164, 38, 0.24) 10px, rgba(240, 164, 38, 0.14) 10px, rgba(240, 164, 38, 0.14) 20px);
+  border-bottom: 1px solid var(--mil-amber);
+  color: #ffffff;
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-align: center;
+  text-transform: uppercase;
+  flex-shrink: 0;
+  text-shadow: 0 0 10px rgba(240, 164, 38, 0.8);
+}
+.hud-alert-strip.afterburner {
+  background: repeating-linear-gradient(-45deg, rgba(255, 59, 92, 0.30), rgba(255, 59, 92, 0.30) 10px, rgba(240, 164, 38, 0.18) 10px, rgba(240, 164, 38, 0.18) 20px);
+  border-bottom-color: var(--mil-red);
+}
+.hud-alert-strip.hidden {
+  display: none;
+}
+
+/* Main Viewport */
+.mil-main {
+  flex: 1;
+  min-height: 0;
+  padding: 16px 20px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.tab-content {
+  display: none;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.tab-content.active {
+  display: flex;
+}
+
+/* ==========================================================================
+   STAR CITIZEN MILITARY-GRADE FROSTED GLASS PANELS & MFD BRACKETS
+   ========================================================================== */
+.glass-panel {
+  background: linear-gradient(165deg, rgba(14, 24, 35, 0.76) 0%, rgba(8, 14, 22, 0.72) 100%);
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  border: 1px solid var(--glass-border);
+  border-radius: 2px;
+  box-shadow: var(--glass-shadow), var(--glass-specular);
+  position: relative;
+}
+
+/* Crisp UEE/Aegis Corner Brackets */
+.hud-brackets::before,
+.hud-brackets::after {
+  content: '';
+  position: absolute;
+  width: 11px;
+  height: 11px;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.hud-brackets::before {
+  top: -1px;
+  left: -1px;
+  border-top: 2px solid var(--sc-cyan);
+  border-left: 2px solid var(--sc-cyan);
+  box-shadow: -2px -2px 8px rgba(72, 220, 255, 0.25);
+}
+
+.hud-brackets::after {
+  bottom: -1px;
+  right: -1px;
+  border-bottom: 2px solid var(--mil-amber);
+  border-right: 2px solid var(--mil-amber);
+  box-shadow: 2px 2px 8px rgba(240, 164, 38, 0.25);
+}
+
+.deck-section-title {
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--sc-cyan);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-shadow: 0 0 10px rgba(72, 220, 255, 0.25);
+}
+
+/* ==========================================================================
+   BUTTONS & INPUTS (STAR CITIZEN CHAMFERED MIL-SPEC)
+   ========================================================================== */
+.btn-glow {
+  background: linear-gradient(135deg, rgba(72, 220, 255, 0.22), rgba(240, 164, 38, 0.16));
+  border: 1px solid rgba(72, 220, 255, 0.65);
+  clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px));
+  color: #ffffff;
+  font-family: var(--font-display);
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 8px 18px;
+  cursor: pointer;
+  box-shadow: 0 0 16px rgba(72, 220, 255, 0.22), var(--glass-specular);
+  transition: all 0.18s ease;
+}
+.btn-glow:hover {
+  background: linear-gradient(135deg, rgba(72, 220, 255, 0.36), rgba(240, 164, 38, 0.26));
+  border-color: var(--sc-cyan);
+  box-shadow: 0 0 22px rgba(72, 220, 255, 0.45);
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  background: rgba(12, 22, 32, 0.78);
+  border: 1px solid rgba(72, 220, 255, 0.22);
+  clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 0 100%);
+  color: var(--text-primary);
+  font-family: var(--font-hud);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: all 0.16s ease;
+  box-shadow: var(--glass-specular);
+}
+.btn-secondary:hover {
+  background: rgba(24, 42, 58, 0.92);
+  border-color: var(--sc-cyan);
+  color: #ffffff;
+  box-shadow: 0 0 12px rgba(72, 220, 255, 0.2);
+}
+.btn-secondary.active {
+  background: rgba(72, 220, 255, 0.20);
+  border-color: var(--sc-cyan);
+  color: #ffffff;
+}
+
+.edit-btn-pill {
+  background: rgba(72, 220, 255, 0.14);
+  border: 1px solid rgba(72, 220, 255, 0.45);
+  clip-path: polygon(0 0, calc(100% - 5px) 0, 100% 5px, 100% 100%, 0 100%);
+  color: var(--sc-cyan);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 3px 9px;
+  cursor: pointer;
+  transition: all 0.16s ease;
+}
+.edit-btn-pill:hover {
+  background: rgba(72, 220, 255, 0.30);
+  border-color: var(--sc-cyan);
+  color: #ffffff;
+  box-shadow: 0 0 12px var(--sc-cyan-glow);
+}
+
+.matrix-search-input,
+.form-input {
+  background: rgba(5, 10, 16, 0.80);
+  border: 1px solid rgba(72, 220, 255, 0.22);
+  color: var(--text-primary);
+  padding: 7px 12px;
+  border-radius: 2px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  outline: none;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+.matrix-search-input:focus,
+.form-input:focus {
+  border-color: var(--sc-cyan);
+  box-shadow: 0 0 12px rgba(72, 220, 255, 0.25);
+}
+
+input[type="range"] {
+  accent-color: var(--sc-cyan);
+  cursor: pointer;
+}
+
+/* ==========================================================================
+   TAB 1: COCKPIT DECK & TELEMETRY (UEE MFD STYLE)
+   ========================================================================== */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 1fr 335px;
+  gap: 16px;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.cockpit-deck {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+  padding-right: 6px;
+  min-height: 0;
+}
+
+.telemetry-top-split {
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 12px;
+}
+
+/* Deck Sub-Filter Bar */
+.deck-filter-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 12px;
+  background: rgba(8, 15, 23, 0.78);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(72, 220, 255, 0.18);
+  border-left: 3px solid var(--mil-amber);
+  flex-wrap: wrap;
+}
+
+.deck-filter-pills {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.deck-filter-btn {
+  padding: 5px 11px;
+  background: rgba(14, 24, 35, 0.65);
+  border: 1px solid rgba(72, 220, 255, 0.18);
+  clip-path: polygon(0 0, calc(100% - 5px) 0, 100% 5px, 100% 100%, 0 100%);
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  cursor: pointer;
+  transition: all 0.16s ease;
+}
+.deck-filter-btn:hover {
+  border-color: var(--sc-cyan);
+  color: #ffffff;
+}
+.deck-filter-btn.active {
+  background: rgba(72, 220, 255, 0.20);
+  border-color: var(--sc-cyan);
+  color: #ffffff;
+  box-shadow: 0 0 12px rgba(72, 220, 255, 0.25);
+}
+
+.deck-section-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.deck-section-group.hidden-deck {
+  display: none;
+}
+
+/* Base LEDs Row */
+.base-leds-row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+}
+
+.base-led-unit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 4px;
+  background: rgba(6, 11, 17, 0.76);
+  border: 1px solid rgba(72, 220, 255, 0.14);
+  clip-path: polygon(0 0, calc(100% - 5px) 0, 100% 5px, 100% 100%, 0 100%);
+  cursor: pointer;
+  transition: all 0.18s ease;
+  text-align: center;
+}
+.base-led-unit:hover {
+  border-color: rgba(56, 226, 157, 0.45);
+}
+.base-led-unit span {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-secondary);
+  line-height: 1.2;
+}
+.base-led-unit .led-bulb {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #142621;
+  border: 1px solid #26483e;
+  transition: all 0.2s ease;
+}
+.base-led-unit.on {
+  border-color: rgba(56, 226, 157, 0.6);
+  background: rgba(56, 226, 157, 0.10);
+  box-shadow: 0 0 12px rgba(56, 226, 157, 0.16);
+}
+.base-led-unit.on .led-bulb {
+  background: var(--mil-green);
+  box-shadow: 0 0 10px var(--mil-green), 0 0 18px rgba(56, 226, 157, 0.7);
+}
+.base-led-unit.on span {
+  color: var(--mil-green);
+}
+
+/* Star Citizen MFD Switch Cards */
+.switches-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(215px, 1fr));
+  gap: 10px;
+}
+
+.switch-card {
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  border-left: 2px solid rgba(72, 220, 255, 0.30);
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%);
+}
+.switch-card:hover {
+  background: var(--glass-bg-hover);
+  border-color: rgba(72, 220, 255, 0.6);
+  box-shadow: 0 0 18px rgba(72, 220, 255, 0.16), var(--glass-specular);
+  transform: translateY(-1px);
+}
+.switch-card.active {
+  background: linear-gradient(135deg, rgba(240, 164, 38, 0.20), rgba(14, 24, 35, 0.86));
+  border-color: var(--mil-amber);
+  border-left: 3px solid var(--mil-amber);
+  box-shadow: 0 0 20px rgba(240, 164, 38, 0.28), var(--glass-specular);
+}
+
+.switch-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 6px;
+}
+.switch-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: 0.5px;
+}
+.switch-sub {
+  font-size: 10.5px;
+  color: var(--text-secondary);
+}
+.switch-status-pill {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  padding: 2px 6px;
+  background: rgba(4, 9, 14, 0.65);
+  border: 1px solid rgba(72, 220, 255, 0.22);
+  color: var(--sc-cyan);
+  white-space: nowrap;
+}
+.switch-card.active .switch-status-pill {
+  background: rgba(240, 164, 38, 0.24);
+  border-color: var(--mil-amber);
+  color: var(--mil-amber);
+}
+
+.switch-visual {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 30px;
+}
+
+.toggle-housing {
+  width: 46px;
+  height: 20px;
+  background: #060b11;
+  border: 1px solid rgba(72, 220, 255, 0.28);
+  border-radius: 10px;
+  position: relative;
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.85);
+}
+.toggle-knob {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #98b4c4, #405462);
+  position: absolute;
+  top: 1px;
+  left: 2px;
+  transition: all 0.18s ease;
+}
+.switch-card.active .toggle-knob {
+  left: 26px;
+  background: linear-gradient(145deg, #ffe08a, var(--mil-amber));
+  box-shadow: 0 0 10px var(--mil-amber-glow);
+}
+
+.lever-3pos-housing {
+  width: 66px;
+  height: 14px;
+  background: #060b11;
+  border: 1px solid rgba(72, 220, 255, 0.28);
+  border-radius: 7px;
+  position: relative;
+}
+.lever-pin {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #7b96a6;
+  position: absolute;
+  top: -3px;
+  transition: left 0.18s ease, background 0.18s ease;
+}
+.lever-pin.pos-left, .lever-pin.pos-up { left: 2px; background: var(--mil-amber); box-shadow: 0 0 10px var(--mil-amber-glow); }
+.lever-pin.pos-mid { left: 23px; }
+.lever-pin.pos-right, .lever-pin.pos-down { left: 44px; background: var(--sc-cyan); box-shadow: 0 0 10px var(--sc-cyan-glow); }
+
+.switch-action-tag {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-dim);
+  padding-top: 6px;
+  border-top: 1px solid rgba(72, 220, 255, 0.08);
+}
+
+/* Right Telemetry Rail + Star Citizen Radar Scope */
+.telemetry-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.radar-card {
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.radar-scope {
+  width: 152px;
+  height: 152px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle, rgba(72, 220, 255, 0.10) 0%, rgba(5, 10, 16, 0.94) 72%),
+    repeating-radial-gradient(circle, transparent 0, transparent 22px, rgba(72, 220, 255, 0.12) 23px, transparent 24px);
+  border: 1.5px solid rgba(72, 220, 255, 0.45);
+  position: relative;
+  overflow: hidden;
+  box-shadow: inset 0 0 22px rgba(72, 220, 255, 0.16), 0 0 18px rgba(72, 220, 255, 0.10);
+}
+
+/* Subtle Rotating Star Citizen Ship Radar Sweep */
+.radar-scope::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: conic-gradient(from 0deg, rgba(72, 220, 255, 0.24) 0deg, rgba(72, 220, 255, 0.0) 65deg, transparent 360deg);
+  border-radius: 50%;
+  animation: sc-radar-sweep 6s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes sc-radar-sweep {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.crosshair-h {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: rgba(72, 220, 255, 0.25);
+}
+.crosshair-v {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(72, 220, 255, 0.25);
+}
+.deadzone-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 24px;
+  height: 24px;
+  transform: translate(-50%, -50%);
+  border: 1px dashed rgba(240, 164, 38, 0.65);
+  border-radius: 50%;
+}
+.slew-dot {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 10px;
+  height: 10px;
+  transform: translate(-50%, -50%);
+  background: var(--sc-cyan);
+  border: 1.5px solid #ffffff;
+  border-radius: 50%;
+  box-shadow: 0 0 12px var(--sc-cyan);
+  z-index: 2;
+}
+
+.log-terminal {
+  padding: 12px;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.terminal-stream {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  background: rgba(4, 8, 13, 0.78);
+  border: 1px solid rgba(72, 220, 255, 0.16);
+  padding: 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+.log-entry {
+  padding: 3px 0;
+  border-bottom: 1px solid rgba(72, 220, 255, 0.06);
+  color: var(--text-secondary);
+}
+.log-entry .timestamp {
+  color: var(--mil-amber);
+  margin-right: 4px;
+}
+
+/* ==========================================================================
+   TAB 2: VISUAL DUAL JOYSTICK MAPPING STUDIO (STICKY STAGE + SC TARGET PIP)
+   ========================================================================== */
+.vmap-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+  flex-shrink: 0;
+}
+
+.vmap-view-pills {
+  display: flex;
+  gap: 5px;
+}
+
+.vmap-view-btn {
+  padding: 5px 11px;
+  background: rgba(10, 18, 28, 0.78);
+  border: 1px solid rgba(72, 220, 255, 0.22);
+  clip-path: polygon(0 0, calc(100% - 5px) 0, 100% 5px, 100% 100%, 0 100%);
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.16s ease;
+}
+.vmap-view-btn:hover {
+  border-color: var(--sc-cyan);
+  color: #ffffff;
+}
+.vmap-view-btn.active {
+  background: rgba(72, 220, 255, 0.22);
+  border-color: var(--sc-cyan);
+  color: #ffffff;
+  box-shadow: 0 0 12px rgba(72, 220, 255, 0.25);
+}
+
+.vmap-dual-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.vmap-device-card {
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.cheat-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.device-tag {
+  font-family: var(--font-display);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--sc-cyan);
+  padding: 4px 10px;
+  background: rgba(72, 220, 255, 0.12);
+  border: 1px solid rgba(72, 220, 255, 0.45);
+  clip-path: polygon(0 0, calc(100% - 7px) 0, 100% 7px, 100% 100%, 0 100%);
+}
+
+.mode-tag {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-secondary);
+  padding: 3px 8px;
+  background: rgba(5, 10, 16, 0.55);
+  border: 1px solid rgba(72, 220, 255, 0.16);
+}
+
+/* Sticky Hardware Image Stage */
+.vmap-showcase-box {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(72, 220, 255, 0.11) 0%, rgba(5, 10, 16, 0.86) 72%);
+  border: 1px solid rgba(72, 220, 255, 0.22);
+  flex-shrink: 0;
+  min-height: 235px;
+  overflow: visible;
+}
+
+#vmap-col-throttle .vmap-showcase-box {
+  background:
+    radial-gradient(circle at 50% 50%, rgba(240, 164, 38, 0.11) 0%, rgba(5, 10, 16, 0.86) 72%);
+  border-color: rgba(240, 164, 38, 0.24);
+}
+
+.vmap-img-glow-pedestal {
+  position: absolute;
+  bottom: 34px;
+  width: 175px;
+  height: 20px;
+  background: radial-gradient(ellipse at 50% 50%, rgba(72, 220, 255, 0.42) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+  filter: blur(4px);
+}
+.vmap-img-glow-pedestal.throttle-pedestal {
+  width: 245px;
+  background: radial-gradient(ellipse at 50% 50%, rgba(240, 164, 38, 0.40) 0%, transparent 70%);
+}
+
+.vmap-stage {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+  z-index: 2;
+}
+
+.vmap-stick-img {
+  max-height: 215px;
+  width: auto;
+  display: block;
+  object-fit: contain;
+  filter: drop-shadow(0 12px 20px rgba(0, 0, 0, 0.9));
+}
+
+.vmap-throttle-img {
+  max-height: 205px;
+  width: auto;
+  display: block;
+  object-fit: contain;
+  filter: drop-shadow(0 12px 20px rgba(0, 0, 0, 0.9));
+}
+
+.vmap-showcase-caption {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: var(--text-secondary);
+  text-align: center;
+  z-index: 1;
+}
+
+/* Scrollable Buttons List Below Sticky Image */
+.vmap-scroll-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-right: 4px;
+}
+
+.vmap-group,
+.vmap-group-box {
+  background: rgba(6, 12, 19, 0.62);
+  border: 1px solid rgba(72, 220, 255, 0.14);
+  padding: 9px 10px;
+}
+
+#vmap-col-throttle .vmap-group-box {
+  border-color: rgba(240, 164, 38, 0.20);
+}
+
+.vmap-group-title {
+  font-family: var(--font-display);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.4px;
+  color: var(--sc-cyan);
+  margin-bottom: 7px;
+  padding-bottom: 5px;
+  border-bottom: 1px solid rgba(72, 220, 255, 0.14);
+}
+
+.vmap-btn-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.vmap-btn-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  background: rgba(12, 22, 32, 0.68);
+  border: 1px solid rgba(72, 220, 255, 0.10);
+  border-left: 3px solid var(--sc-cyan);
+  transition: all 0.16s ease;
+  cursor: pointer;
+}
+.vmap-btn-row:hover {
+  background: rgba(72, 220, 255, 0.14);
+  border-color: var(--sc-cyan);
+  transform: translateX(3px);
+}
+.vmap-btn-row.active {
+  background: rgba(72, 220, 255, 0.26) !important;
+  border-color: var(--sc-cyan) !important;
+  box-shadow: 0 0 16px var(--sc-cyan-glow) !important;
+}
+
+#vmap-col-throttle .vmap-btn-row {
+  border-left-color: var(--mil-amber);
+}
+#vmap-col-throttle .vmap-btn-row:hover {
+  background: rgba(240, 164, 38, 0.15);
+  border-color: var(--mil-amber);
+}
+#vmap-col-throttle .vmap-btn-row.active {
+  background: rgba(240, 164, 38, 0.28) !important;
+  border-color: var(--mil-amber) !important;
+  box-shadow: 0 0 16px var(--mil-amber-glow) !important;
+}
+
+.vmap-btn-id {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--sc-cyan);
+  min-width: 68px;
+}
+.vmap-btn-id.amber { color: var(--mil-amber); }
+.vmap-btn-id.green { color: var(--mil-green); }
+
+.vmap-btn-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 0 8px;
+  min-width: 0;
+}
+.vmap-btn-action {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.vmap-btn-sub {
+  font-size: 10.5px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.vmap-btn-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+/* ==========================================================================
+   STAR CITIZEN TARGET-LOCK RETICLE & HOTSPOT OVERLAY
+   ========================================================================== */
+.vmap-overlay-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: visible;
+}
+
+.vmap-reticle {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 34px;
+  height: 34px;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.18s ease, visibility 0.18s, left 0.2s cubic-bezier(0.16, 1, 0.3, 1), top 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 15;
+}
+.vmap-reticle.visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Star Citizen Target Lock Diamond-Bracket Ring */
+.vmap-reticle-ring {
+  position: absolute;
+  inset: 0;
+  border: 2px solid var(--sc-cyan);
+  transform: rotate(45deg);
+  box-shadow: 0 0 14px var(--sc-cyan-glow), inset 0 0 8px rgba(72, 220, 255, 0.3);
+  animation: sc-lock-pulse 1.6s infinite ease-in-out;
+}
+#vmap-reticle-throttle .vmap-reticle-ring {
+  border-color: var(--mil-amber);
+  box-shadow: 0 0 14px var(--mil-amber-glow), inset 0 0 8px rgba(240, 164, 38, 0.3);
+}
+
+.vmap-reticle-ping {
+  position: absolute;
+  inset: -6px;
+  border: 1.5px solid var(--sc-cyan);
+  border-radius: 50%;
+  opacity: 0;
+  animation: reticle-ping 1.5s infinite cubic-bezier(0, 0.2, 0.8, 1);
+}
+#vmap-reticle-throttle .vmap-reticle-ping {
+  border-color: var(--mil-amber);
+}
+
+.vmap-reticle-cross {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 6px;
+  height: 6px;
+  background: #ffffff;
+  border-radius: 50%;
+  box-shadow: 0 0 10px #ffffff;
+}
+
+.vmap-reticle-callout {
+  position: absolute;
+  left: 44px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: rgba(6, 12, 20, 0.96);
+  border: 1px solid var(--sc-cyan);
+  clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.9), 0 0 14px var(--sc-cyan-glow);
+  padding: 5px 12px 5px 8px;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: #ffffff;
+  pointer-events: none;
+}
+.vmap-reticle-callout::before {
+  content: '';
+  position: absolute;
+  left: -12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 12px;
+  height: 2px;
+  background: var(--sc-cyan);
+}
+.vmap-reticle-callout.flip-left {
+  left: auto;
+  right: 44px;
+}
+.vmap-reticle-callout.flip-left::before {
+  left: auto;
+  right: -12px;
+}
+#vmap-reticle-throttle .vmap-reticle-callout {
+  border-color: var(--mil-amber);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.9), 0 0 14px var(--mil-amber-glow);
+}
+#vmap-reticle-throttle .vmap-reticle-callout::before {
+  background: var(--mil-amber);
+}
+
+.vmap-callout-badge {
+  background: rgba(72, 220, 255, 0.22);
+  color: var(--sc-cyan);
+  font-weight: 800;
+  padding: 2px 6px;
+  font-size: 10px;
+  border: 1px solid rgba(72, 220, 255, 0.45);
+}
+.vmap-callout-badge.amber {
+  background: rgba(240, 164, 38, 0.22);
+  color: var(--mil-amber);
+  border-color: rgba(240, 164, 38, 0.48);
+}
+.vmap-callout-text {
+  font-weight: 600;
+  font-size: 11px;
+  color: #ffffff;
+}
+
+.vmap-hotspot-pin {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: rgba(72, 220, 255, 0.24);
+  border: 1.5px solid rgba(72, 220, 255, 0.78);
+  cursor: pointer;
+  pointer-events: auto;
+  transition: all 0.16s ease;
+  z-index: 6;
+}
+.vmap-hotspot-pin:hover {
+  background: var(--sc-cyan);
+  border-color: #ffffff;
+  transform: translate(-50%, -50%) scale(1.6);
+  box-shadow: 0 0 14px var(--sc-cyan-glow);
+}
+#vmap-overlay-throttle .vmap-hotspot-pin {
+  background: rgba(240, 164, 38, 0.24);
+  border-color: rgba(240, 164, 38, 0.8);
+}
+#vmap-overlay-throttle .vmap-hotspot-pin:hover {
+  background: var(--mil-amber);
+  border-color: #ffffff;
+  box-shadow: 0 0 14px var(--mil-amber-glow);
+}
+
+@keyframes sc-lock-pulse {
+  0%, 100% { transform: rotate(45deg) scale(0.95); opacity: 0.88; }
+  50% { transform: rotate(45deg) scale(1.06); opacity: 1; }
+}
+@keyframes reticle-ping {
+  0% { transform: scale(0.6); opacity: 0.9; }
+  80%, 100% { transform: scale(1.85); opacity: 0; }
+}
+
+/* ==========================================================================
+   TAB 3: KEY MATRIX & KEY BADGES
+   ========================================================================== */
+.key-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  color: #ffffff;
+  background: rgba(72, 220, 255, 0.16);
+  border: 1px solid rgba(72, 220, 255, 0.48);
+  clip-path: polygon(0 0, calc(100% - 4px) 0, 100% 4px, 100% 100%, 0 100%);
+}
+.key-badge.mod {
+  background: rgba(240, 164, 38, 0.20);
+  border-color: rgba(240, 164, 38, 0.55);
+  color: var(--mil-amber);
+}
+.key-badge.dim {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.14);
+  color: var(--text-dim);
+}
+
+/* ==========================================================================
+   TAB 5: AUTO-DOCTOR XML
+   ========================================================================== */
+.doctor-container {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 1080px;
+  width: 100%;
+  margin: 0 auto;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.health-banner {
+  padding: 16px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  border-left: 4px solid var(--mil-green);
+}
+.health-banner.warning {
+  border-left-color: var(--mil-amber);
+}
+.health-banner.critical {
+  border-left-color: var(--mil-red);
+}
+
+.diag-devices-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+.device-card {
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.inst-id {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+}
+.prod-name {
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: 0.6px;
+}
+
+/* ==========================================================================
+   KEY EDITOR MODAL (STAR CITIZEN MOBIGLAS MILITARY GLASS)
+   ========================================================================== */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(3, 6, 11, 0.80);
+  backdrop-filter: blur(10px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+.modal-overlay.active {
+  display: flex;
+}
+
+.modal-window {
+  width: 100%;
+  max-width: 540px;
+  background: linear-gradient(165deg, rgba(13, 24, 36, 0.94) 0%, rgba(7, 13, 21, 0.96) 100%);
+  backdrop-filter: blur(22px) saturate(145%);
+  border: 1px solid rgba(72, 220, 255, 0.45);
+  clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px));
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-shadow: 0 28px 64px rgba(0, 0, 0, 0.85), 0 0 32px rgba(72, 220, 255, 0.16), var(--glass-specular);
+  position: relative;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(72, 220, 255, 0.22);
+}
+.modal-title {
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: #ffffff;
+}
+.modal-close-btn {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(72, 220, 255, 0.28);
+  color: var(--text-secondary);
+  width: 28px;
+  height: 28px;
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.16s ease;
+}
+.modal-close-btn:hover {
+  border-color: var(--mil-red);
+  color: var(--mil-red);
+  background: rgba(255, 59, 92, 0.12);
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.form-group label {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--sc-cyan);
+  text-transform: uppercase;
+  letter-spacing: 0.9px;
+}
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.key-listener-box {
+  padding: 15px;
+  background: rgba(5, 10, 16, 0.85);
+  border: 1.5px dashed rgba(72, 220, 255, 0.45);
+  text-align: center;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: all 0.18s ease;
+}
+.key-listener-box:hover,
+.key-listener-box.listening,
+.key-listener-box.capturing {
+  border-color: var(--mil-amber);
+  background: rgba(240, 164, 38, 0.12);
+  box-shadow: 0 0 20px rgba(240, 164, 38, 0.25);
+}
+.key-preview-display {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: 1.5px;
+  text-shadow: 0 0 10px rgba(72, 220, 255, 0.35);
+}
+
+.checkbox-chips {
+  display: flex;
+  gap: 10px;
+}
+.checkbox-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: rgba(7, 13, 20, 0.78);
+  border: 1px solid rgba(72, 220, 255, 0.22);
+  clip-path: polygon(0 0, calc(100% - 5px) 0, 100% 5px, 100% 100%, 0 100%);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-primary);
+}
+.checkbox-chip input {
+  accent-color: var(--mil-amber);
+}
+
+/* Responsive */
+@media (max-width: 1180px) {
+  .app-shell {
+    grid-template-columns: 218px 1fr;
+  }
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+  .telemetry-sidebar {
+    display: none;
+  }
+  .telemetry-top-split {
+    grid-template-columns: 1fr;
+  }
+  .vmap-dual-grid {
+    grid-template-columns: 1fr;
+    overflow-y: auto;
+  }
+  .vmap-device-card {
+    min-height: 540px;
+  }
+}
+
+@media print {
+  .mil-sidebar, .mil-topbar, .vmap-toolbar {
+    display: none !important;
+  }
+  .app-shell {
+    display: block;
+    height: auto;
+    overflow: visible;
+  }
+  .vmap-dual-grid, .vmap-scroll-list {
+    overflow: visible !important;
+    height: auto !important;
+  }
+}
+
+/* ==========================================================================
+   MACROS STUDIO & DUAL-ACTION BADGES
+   ========================================================================== */
+.modal-window {
+  max-height: 92vh;
+  overflow-y: auto;
+}
+
+.macro-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 12px;
+  background: rgba(10, 18, 28, 0.72);
+  border: 1px solid rgba(72, 220, 255, 0.16);
+  border-left: 3px solid var(--sc-cyan);
+  transition: all 0.16s ease;
+}
+.macro-card:hover {
+  border-color: var(--sc-cyan);
+  background: rgba(72, 220, 255, 0.10);
+}
+.macro-step-row {
+  display: grid;
+  grid-template-columns: 28px 95px 1fr 72px 76px 28px;
+  gap: 6px;
+  align-items: center;
+  padding: 6px 8px;
+  background: rgba(6, 12, 19, 0.75);
+  border: 1px solid rgba(72, 220, 255, 0.14);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+.key-badge.macro-pill {
+  background: rgba(168, 85, 247, 0.22);
+  border-color: rgba(192, 132, 252, 0.6);
+  color: #e9d5ff;
+}
+.key-badge.hold-pill {
+  background: rgba(240, 164, 38, 0.20);
+  border-color: rgba(240, 164, 38, 0.55);
+  color: var(--mil-amber);
+}

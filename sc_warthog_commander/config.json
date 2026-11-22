@@ -1,0 +1,676 @@
+{
+    "star_citizen_live_path": "C:\\Program Files\\Roberts Space Industries\\StarCitizen\\LIVE",
+    "pulse_hold_ms": 60,
+    "slew_deadzone_percent": 12,
+    "virtual_yaw_assist": true,
+    "virtual_yaw_source": "slew_x",
+    "auto_fix_ids_on_start": true,
+    "mappings": {
+        "APU_ON": {
+            "key": "R",
+            "modifiers": [
+                "ALT"
+            ],
+            "desc": "Flight Ready - Ligar Tudo (Alt+R)",
+            "hold_ms": 60
+        },
+        "APU_OFF": {
+            "key": "U",
+            "modifiers": [],
+            "desc": "Power Off - Desligar Sistemas (U)",
+            "hold_ms": 60
+        },
+        "EAC_ON": {
+            "key": "B",
+            "modifiers": [],
+            "desc": "Alternar Master Mode (SCM / NAV - B)",
+            "hold_ms": 300
+        },
+        "EAC_OFF": {
+            "key": "B",
+            "modifiers": [],
+            "desc": "Regressar a Modo Combate SCM (B)",
+            "hold_ms": 300
+        },
+        "RDR_ALTM_ON": {
+            "key": "N",
+            "modifiers": [],
+            "desc": "Recolher Trem de Aterragem (N)",
+            "hold_ms": 60
+        },
+        "RDR_ALTM_OFF": {
+            "key": "N",
+            "modifiers": [],
+            "desc": "Baixar Trem de Aterragem (N)",
+            "hold_ms": 60
+        },
+        "FUEL_L_ON": {
+            "key": "I",
+            "modifiers": [],
+            "desc": "Ligar Propulsores (I)",
+            "hold_ms": 60
+        },
+        "FUEL_L_OFF": {
+            "key": "I",
+            "modifiers": [],
+            "desc": "Desligar Propulsores (I)",
+            "hold_ms": 60
+        },
+        "FUEL_R_ON": {
+            "key": "P",
+            "modifiers": [],
+            "desc": "Ligar Energia das Armas (P)",
+            "hold_ms": 60
+        },
+        "FUEL_R_OFF": {
+            "key": "P",
+            "modifiers": [],
+            "desc": "Desligar Energia das Armas (P)",
+            "hold_ms": 60
+        },
+        "LDGHORN_PRESS": {
+            "key": "N",
+            "modifiers": [
+                "ALT"
+            ],
+            "desc": "Chamar ATC / Pedir Aterragem (Alt+N)",
+            "hold_ms": 80
+        },
+        "AP_ENGAGE_PRESS": {
+            "key": "",
+            "modifiers": [],
+            "desc": "Chamar ATC / Aterragem (Alt+N)",
+            "hold_ms": 80
+        },
+        "FLAPS_UP": {
+            "key": "C",
+            "modifiers": [],
+            "desc": "Cruise Control ON/OFF (C)",
+            "hold_ms": 60
+        },
+        "FLAPS_MID": {
+            "key": "K",
+            "modifiers": [],
+            "desc": "Sair de VTOL -> Voo Normal (K)",
+            "hold_ms": 60
+        },
+        "FLAPS_DN": {
+            "key": "K",
+            "modifiers": [],
+            "desc": "Ativar Modo VTOL / Hover (K)",
+            "hold_ms": 60
+        },
+        "PINKY_FWD": {
+            "key": "L",
+            "modifiers": [],
+            "desc": "Faróis Exteriores ON (L)",
+            "hold_ms": 60
+        },
+        "PINKY_MID": {
+            "key": "L",
+            "modifiers": [],
+            "desc": "Faróis Exteriores OFF (L)",
+            "hold_ms": 60
+        },
+        "PINKY_AFT": {
+            "key": "L",
+            "modifiers": [],
+            "desc": "Alternar Luzes / Cabine (L)",
+            "hold_ms": 60
+        },
+        "BOAT_FWD": {
+            "key": "B",
+            "modifiers": [],
+            "desc": "Quantum Spool / Salto (B)",
+            "hold_ms": 60
+        },
+        "BOAT_MID": {
+            "key": "",
+            "modifiers": [],
+            "desc": "Boat Centro (Neutro)",
+            "hold_ms": 0
+        },
+        "BOAT_AFT": {
+            "key": "B",
+            "modifiers": [],
+            "desc": "Cancelar Quantum / SCM (B)",
+            "hold_ms": 60
+        },
+        "SPDBRK_FWD": {
+            "key": "C",
+            "modifiers": [],
+            "desc": "Cruise Control ON/OFF (C)",
+            "hold_ms": 60
+        },
+        "SPDBRK_MID": {
+            "key": "",
+            "modifiers": [],
+            "desc": "Speed Brake Neutro",
+            "hold_ms": 0
+        },
+        "SPDBRK_AFT": {
+            "key": "X",
+            "modifiers": [],
+            "desc": "Space Brake / Travão de Emergência (X)",
+            "hold_ms": 80
+        },
+        "ENG_L_IGN": {
+            "key": "X",
+            "modifiers": [
+                "ALT"
+            ],
+            "desc": "Limpar Visor do Capacete (Alt+X)",
+            "hold_ms": 60
+        },
+        "ENG_L_NORM": {
+            "key": "I",
+            "modifiers": [],
+            "desc": "Propulsores Normais ON (I)",
+            "hold_ms": 60
+        },
+        "ENG_L_MOTOR": {
+            "key": "I",
+            "modifiers": [],
+            "desc": "Cortar Propulsores OFF (I)",
+            "hold_ms": 60
+        },
+        "ENG_R_IGN": {
+            "key": "P",
+            "modifiers": [],
+            "desc": "Alternar Energia das Armas (P)",
+            "hold_ms": 60
+        },
+        "ENG_R_NORM": {
+            "key": "P",
+            "modifiers": [],
+            "desc": "Armas Normais ON (P)",
+            "hold_ms": 60
+        },
+        "ENG_R_MOTOR": {
+            "key": "P",
+            "modifiers": [],
+            "desc": "Cortar Energia das Armas OFF (P)",
+            "hold_ms": 60
+        },
+        "AP_PATH": {
+            "key": "MOUSE1",
+            "modifiers": [],
+            "desc": "Abrir Todas as Portas / Rampas (Alt+K)",
+            "hold_ms": 320
+        },
+        "AP_MID": {
+            "key": "O",
+            "modifiers": [
+                "ALT"
+            ],
+            "desc": "Fechar Todas as Portas (Alt+O)",
+            "hold_ms": 60
+        },
+        "AP_ALT": {
+            "key": "L",
+            "modifiers": [
+                "ALT"
+            ],
+            "desc": "Trancar Todas as Portas (Alt+L)",
+            "hold_ms": 60
+        },
+        "IDLE_L_OFF": {
+            "key": "I",
+            "modifiers": [],
+            "desc": "Corte Físico Motor Esq. (Cutoff OFF -> I)",
+            "hold_ms": 60
+        },
+        "IDLE_L_IDLE": {
+            "key": "I",
+            "modifiers": [],
+            "desc": "Arranque Motor Esq. (Saída de Cutoff -> I)",
+            "hold_ms": 60
+        },
+        "IDLE_R_OFF": {
+            "key": "I",
+            "modifiers": [],
+            "desc": "Corte Físico Motor Dir. (Cutoff OFF -> I)",
+            "hold_ms": 60
+        },
+        "IDLE_R_IDLE": {
+            "key": "I",
+            "modifiers": [],
+            "desc": "Arranque Motor Dir. (Saída de Cutoff -> I)",
+            "hold_ms": 60
+        },
+        "CHINA_FWD_PRESS": {
+            "key": "LSHIFT",
+            "modifiers": [],
+            "desc": "Boost / Pós-Combustão (Left Shift)",
+            "hold_ms": 100
+        },
+        "CHINA_AFT_PRESS": {
+            "key": "S",
+            "modifiers": [],
+            "desc": "Inverter Propulsão / Recuar (S)",
+            "hold_ms": 80
+        },
+        "MIC_PUSH_PRESS": {
+            "key": "NUM_ADD",
+            "modifiers": [],
+            "desc": "Push-to-Talk VOIP (Num +)",
+            "hold_ms": 60
+        },
+        "MIC_UP_PRESS": {
+            "key": "V",
+            "modifiers": [],
+            "desc": "Modo Scan (V)",
+            "hold_ms": 60
+        },
+        "MIC_RIGHT_PRESS": {
+            "key": "",
+            "modifiers": [],
+            "desc": "Câmara Externa 3ª Pessoa (F4)",
+            "hold_ms": 60
+        },
+        "MIC_DOWN_PRESS": {
+            "key": "M",
+            "modifiers": [],
+            "desc": "Modo Mineração / Salvage (M)",
+            "hold_ms": 60
+        },
+        "MIC_LEFT_PRESS": {
+            "key": "",
+            "modifiers": [],
+            "desc": "Desativado (Sem Z / Shift+Z)",
+            "hold_ms": 0
+        },
+        "SLEW_PUSH_PRESS": {
+            "key": "F",
+            "modifiers": [],
+            "desc": "Interação Rápida / Match Vel (F)",
+            "hold_ms": 60
+        },
+        "LTB_PRESS": {
+            "key": "R",
+            "modifiers": [
+                "ALT"
+            ],
+            "desc": "Flight Ready Rápido (Alt+R)",
+            "hold_ms": 60
+        },
+        "VISOR_WIPE_PRESS": {
+            "key": "X",
+            "modifiers": [
+                "ALT"
+            ],
+            "desc": "Limpar Visor do Capacete (Alt+X)",
+            "hold_ms": 60
+        },
+        "COOLIE_UP": {
+            "key": "",
+            "modifiers": [],
+            "desc": "Coolie Hat Cima: Strafe Up (Nativo XML)",
+            "hold_ms": 60
+        },
+        "COOLIE_DOWN": {
+            "key": "",
+            "modifiers": [],
+            "desc": "Coolie Hat Baixo: Strafe Down (Nativo XML)",
+            "hold_ms": 60
+        },
+        "COOLIE_LEFT": {
+            "key": "",
+            "modifiers": [],
+            "desc": "Coolie Hat Esq.: Strafe Left (Nativo XML)",
+            "hold_ms": 60
+        },
+        "COOLIE_RIGHT": {
+            "key": "",
+            "modifiers": [],
+            "desc": "Coolie Hat Dir.: Strafe Right (Nativo XML)",
+            "hold_ms": 60
+        },
+        "TRIM_HAT_UP": {
+            "key": "F6",
+            "modifiers": [],
+            "desc": "Capacitor: Energia Máxima aos Propulsores (F6)",
+            "hold_ms": 60
+        },
+        "TRIM_HAT_RIGHT": {
+            "key": "F7",
+            "modifiers": [],
+            "desc": "Capacitor: Energia Máxima aos Escudos (F7)",
+            "hold_ms": 60
+        },
+        "TRIM_HAT_LEFT": {
+            "key": "F5",
+            "modifiers": [],
+            "desc": "Capacitor: Energia Máxima às Armas (F5)",
+            "hold_ms": 60
+        },
+        "TRIM_HAT_DOWN": {
+            "key": "F8",
+            "modifiers": [],
+            "desc": "Capacitor: Equilibrar Energia (F8)",
+            "hold_ms": 60
+        },
+        "STICK_BTN_1": {
+            "key": "",
+            "modifiers": [],
+            "desc": "TG1 Gatilho Etapa 1: Armas Grupo 1 (Nativo XML)",
+            "hold_ms": 60
+        },
+        "STICK_BTN_2": {
+            "key": "",
+            "modifiers": [],
+            "desc": "S2 Weapon Release: Lançar Míssil / Laser (Nativo XML)",
+            "hold_ms": 60
+        },
+        "STICK_BTN_3": {
+            "key": "",
+            "modifiers": [],
+            "desc": "S3 Nosewheel Steering: Modo Gimbal / Match Vel (Nativo XML)",
+            "hold_ms": 60
+        },
+        "STICK_BTN_5": {
+            "key": "B",
+            "modifiers": [],
+            "desc": "S1 Master Mode: Alternar SCM / NAV (B)",
+            "hold_ms": 60
+        },
+        "STICK_BTN_6": {
+            "key": "",
+            "modifiers": [],
+            "desc": "TG2 Gatilho Etapa 2: Armas Grupo 2 (Nativo XML)",
+            "hold_ms": 60
+        },
+        "STICK_BTN_7": {
+            "key": "T",
+            "modifiers": [],
+            "desc": "TMS Cima (BTN 07): Selecionar Alvo na Mira (T)",
+            "hold_ms": 60
+        },
+        "STICK_BTN_8": {
+            "key": "5",
+            "modifiers": [],
+            "desc": "TMS Direita (BTN 08): Próximo Alvo Hostil (5)",
+            "hold_ms": 60
+        },
+        "STICK_BTN_9": {
+            "key": "4",
+            "modifiers": [],
+            "desc": "TMS Baixo (BTN 09): Alvo Hostil Mais Próximo (4)",
+            "hold_ms": 60
+        },
+        "STICK_BTN_10": {
+            "key": "",
+            "modifiers": [],
+            "desc": "TMS Esquerda (BTN 10): Fixar Alvo / Hostil Ant. (Nativo XML)",
+            "hold_ms": 60
+        },
+        "STICK_BTN_11": {
+            "key": "TAB",
+            "modifiers": [],
+            "desc": "DMS Cima (BTN 11): Disparar Ping Radar (Tab)",
+            "hold_ms": 60
+        },
+        "STICK_BTN_12": {
+            "key": "7",
+            "modifiers": [],
+            "desc": "DMS Direita (BTN 12): Próximo Todos os Alvos (7)",
+            "hold_ms": 60
+        },
+        "STICK_BTN_13": {
+            "key": "NUM5",
+            "modifiers": [],
+            "desc": "DMS Baixo (BTN 13): Equilibrar Escudos (Num 5)",
+            "hold_ms": 60
+        },
+        "STICK_BTN_14": {
+            "key": "",
+            "modifiers": [],
+            "desc": "DMS Esquerda (BTN 14): Alvo Anterior (Nativo XML)",
+            "hold_ms": 60
+        },
+        "STICK_BTN_15": {
+            "key": "J",
+            "modifiers": [],
+            "desc": "CMS Cima (BTN 15): Lançar Ruído / Chaff (J)",
+            "hold_ms": 60
+        },
+        "STICK_BTN_16": {
+            "key": "",
+            "modifiers": [],
+            "desc": "CMS Direita (BTN 16): +Salva Decoy / Próx. Míssil (Nativo XML)",
+            "hold_ms": 60
+        },
+        "STICK_BTN_17": {
+            "key": "H",
+            "modifiers": [],
+            "desc": "CMS Baixo (BTN 17): Lançar Decoy / Flare (H)",
+            "hold_ms": 60
+        },
+        "STICK_BTN_18": {
+            "key": "",
+            "modifiers": [],
+            "desc": "CMS Esquerda (BTN 18): -Salva Decoy / Míssil Ant. (Nativo XML)",
+            "hold_ms": 60
+        },
+        "STICK_BTN_19": {
+            "key": "",
+            "modifiers": [],
+            "desc": "CMS Push (BTN 19): Salva de Pânico / +Mísseis (Nativo XML)",
+            "hold_ms": 60
+        },
+        "S2_SHIFT": {
+            "key": "J",
+            "modifiers": [
+                "ALT"
+            ],
+            "desc": "[S4+BTN 02] Ejetar Carga Volátil (Alt+J)",
+            "hold_ms": 80
+        },
+        "S1_SHIFT": {
+            "key": "",
+            "modifiers": [],
+            "desc": "[S4+BTN 05] Alternar Modo VTOL (K)",
+            "hold_ms": 60
+        },
+        "TMS_UP_SHIFT": {
+            "key": "8",
+            "modifiers": [],
+            "desc": "[S4+BTN 07] Sub-Target: Próximo Sub-componente (8)",
+            "hold_ms": 60
+        },
+        "TMS_RIGHT_SHIFT": {
+            "key": "6",
+            "modifiers": [],
+            "desc": "[S4+BTN 08] Selecionar Próximo Aliado (6)",
+            "hold_ms": 60
+        },
+        "TMS_DOWN_SHIFT": {
+            "key": "8",
+            "modifiers": [
+                "ALT"
+            ],
+            "desc": "[S4+BTN 09] Reset Sub-componente (Alt+8)",
+            "hold_ms": 60
+        },
+        "DMS_UP_SHIFT": {
+            "key": "NUM8",
+            "modifiers": [],
+            "desc": "[S4+BTN 11] Reforçar Escudo Frontal (Num 8)",
+            "hold_ms": 60
+        },
+        "DMS_RIGHT_SHIFT": {
+            "key": "NUM6",
+            "modifiers": [],
+            "desc": "[S4+BTN 12] Reforçar Escudo Direito (Num 6)",
+            "hold_ms": 60
+        },
+        "DMS_DOWN_SHIFT": {
+            "key": "NUM2",
+            "modifiers": [],
+            "desc": "[S4+BTN 13] Reforçar Escudo Traseiro (Num 2)",
+            "hold_ms": 60
+        },
+        "DMS_LEFT_SHIFT": {
+            "key": "NUM4",
+            "modifiers": [],
+            "desc": "[S4+BTN 14] Reforçar Escudo Esquerdo (Num 4)",
+            "hold_ms": 60
+        },
+        "CMS_RIGHT_SHIFT": {
+            "key": "G",
+            "modifiers": [],
+            "desc": "[S4+BTN 16] Aumentar Mísseis Armados (G)",
+            "hold_ms": 60
+        },
+        "CMS_LEFT_SHIFT": {
+            "key": "G",
+            "modifiers": [
+                "ALT"
+            ],
+            "desc": "[S4+BTN 18] Reset Mísseis Armados (Alt+G)",
+            "hold_ms": 60
+        }
+    },
+    "active_profile": "combat",
+    "afterburner_auto_boost": false,
+    "throttle_led_brightness": 1,
+    "curve_type": "expo",
+    "curve_exponent": 2.0,
+    "split_throttle_mode": "speed_limiter",
+    "custom_profile_mappings": {
+        "combat": {
+            "S1_SHIFT": {
+                "key": "",
+                "modifiers": [],
+                "desc": "[S4+BTN 05] Alternar Modo VTOL (K)",
+                "hold_ms": 60
+            },
+            "AP_ENGAGE_PRESS": {
+                "key": "",
+                "modifiers": [],
+                "desc": "Chamar ATC / Aterragem (Alt+N)",
+                "hold_ms": 80
+            },
+            "AP_PATH": {
+                "key": "MOUSE1",
+                "modifiers": [],
+                "desc": "Abrir Todas as Portas / Rampas (Alt+K)",
+                "hold_ms": 320
+            },
+            "MIC_RIGHT_PRESS": {
+                "key": "",
+                "modifiers": [],
+                "desc": "Câmara Externa 3ª Pessoa (F4)",
+                "hold_ms": 60
+            }
+        },
+        "ground": {
+            "AP_ENGAGE_PRESS": {
+                "key": "MOUSE1",
+                "modifiers": [],
+                "desc": "Quantum drive",
+                "hold_ms": 80
+            }
+        }
+    },
+    "macros": {
+        "macro_full_landing": {
+            "id": "macro_full_landing",
+            "name": "Aterragem Completa (ATC + Trem + VTOL + Faróis)",
+            "icon": "🛬",
+            "steps": [
+                {
+                    "key": "N",
+                    "modifiers": [
+                        "ALT"
+                    ],
+                    "hold_ms": 80,
+                    "delay_after_ms": 450,
+                    "note": "Chamar Torre ATC"
+                },
+                {
+                    "key": "N",
+                    "modifiers": [],
+                    "hold_ms": 80,
+                    "delay_after_ms": 350,
+                    "note": "Baixar Trem de Aterragem"
+                },
+                {
+                    "key": "K",
+                    "modifiers": [],
+                    "hold_ms": 80,
+                    "delay_after_ms": 350,
+                    "note": "Ativar VTOL / Hover"
+                },
+                {
+                    "key": "L",
+                    "modifiers": [],
+                    "hold_ms": 80,
+                    "delay_after_ms": 0,
+                    "note": "Ligar Faróis Exteriores"
+                }
+            ]
+        },
+        "macro_combat_ready": {
+            "id": "macro_combat_ready",
+            "name": "Pronto para Combate (Flight Ready + Ping + Capacitores)",
+            "icon": "⚔️",
+            "steps": [
+                {
+                    "key": "R",
+                    "modifiers": [
+                        "ALT"
+                    ],
+                    "hold_ms": 80,
+                    "delay_after_ms": 600,
+                    "note": "Flight Ready (Ligar Tudo)"
+                },
+                {
+                    "key": "TAB",
+                    "modifiers": [],
+                    "hold_ms": 100,
+                    "delay_after_ms": 300,
+                    "note": "Ping de Radar"
+                },
+                {
+                    "key": "F8",
+                    "modifiers": [],
+                    "hold_ms": 60,
+                    "delay_after_ms": 0,
+                    "note": "Equilibrar Capacitores"
+                }
+            ]
+        },
+        "macro_quantum_prep": {
+            "id": "macro_quantum_prep",
+            "name": "Preparação Salto Quantum (NAV + Propulsores)",
+            "icon": "🌌",
+            "steps": [
+                {
+                    "key": "B",
+                    "modifiers": [],
+                    "hold_ms": 350,
+                    "delay_after_ms": 500,
+                    "note": "Master Mode NAV / Spool"
+                },
+                {
+                    "key": "F6",
+                    "modifiers": [],
+                    "hold_ms": 80,
+                    "delay_after_ms": 0,
+                    "note": "Energia Máxima Propulsores"
+                }
+            ]
+        }
+    },
+    "voice_settings": {
+        "enabled": true,
+        "lang": "pt",
+        "rate": 1.05,
+        "pitch": 0.85,
+        "volume": 0.85
+    },
+    "selected_hotas_kit": "warthog",
+    "auto_check_updates": true,
+    "update_source": "tiagofcustodio/Sc-commander-warthog"
+}

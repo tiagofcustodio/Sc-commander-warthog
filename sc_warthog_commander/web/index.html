@@ -1,0 +1,1492 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AEGIS // Warthog SC Commander — UEE MIL-GLASS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;600;700;800&family=Rajdhani:wght@500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css?v=5.2.0">
+</head>
+<body>
+
+  <div class="app-shell">
+
+    <!-- ================= LEFT TACTICAL COMMAND RAIL ================= -->
+    <aside class="mil-sidebar">
+      <div class="mil-brand">
+        <div class="logo-shield">⚡</div>
+        <div class="brand-text">
+          <h1>WARTHOG MFD</h1>
+          <span class="mil-version-tag">UEE // MIL-GLASS 5.4</span>
+        </div>
+      </div>
+
+      <div>
+        <div class="mil-sidebar-section-label">
+          <span>MÓDULOS DE COMANDO</span>
+          <span>SYS</span>
+        </div>
+        <nav class="mil-nav">
+          <button class="tab-btn active" onclick="switchTab('dashboard')">
+            <span class="nav-idx">01</span>
+            <span>Cockpit & Telemetria</span>
+          </button>
+          <button class="tab-btn" onclick="switchTab('cheatsheet')">
+            <span class="nav-idx">02</span>
+            <span>Mapa Visual HOTAS</span>
+          </button>
+          <button class="tab-btn" onclick="switchTab('matrix')">
+            <span class="nav-idx">03</span>
+            <span>Matriz de Teclas</span>
+          </button>
+          <button class="tab-btn" onclick="switchTab('axes')">
+            <span class="nav-idx">04</span>
+            <span>Curvas & Eixos</span>
+          </button>
+          <button class="tab-btn" onclick="switchTab('doctor')">
+            <span class="nav-idx">05</span>
+            <span>Auto-Doctor XML</span>
+          </button>
+          <button class="tab-btn" onclick="switchTab('macros')">
+            <span class="nav-idx">06</span>
+            <span>Macros & Voz AI</span>
+          </button>
+        </nav>
+      </div>
+
+      <!-- Active Activity Profile Selector -->
+      <div class="profile-selector-bar">
+        <div class="mil-sidebar-section-label">
+          <span>PERFIL OPERACIONAL</span>
+          <span>MODE</span>
+        </div>
+        <div class="profile-pills">
+          <button id="prof-combat" class="prof-pill active" onclick="selectProfile('combat')">⚔️ Combate</button>
+          <button id="prof-mining" class="prof-pill" onclick="selectProfile('mining')">⛏️ Mineração</button>
+          <button id="prof-cargo" class="prof-pill" onclick="selectProfile('cargo')">📦 Carga</button>
+          <button id="prof-ground" class="prof-pill" onclick="selectProfile('ground')">🚜 Terrestre</button>
+        </div>
+      </div>
+
+      <!-- Hardware Telemetry Footer -->
+      <div class="hardware-pods">
+        <div class="mil-sidebar-section-label">
+          <span>ENLACE HARDWARE</span>
+          <span>HID</span>
+        </div>
+        <div id="pod-sc-proc" class="pod-badge offline">
+          <div class="orb"></div>
+          <span id="sc-proc-text">SC.EXE: FECHADO</span>
+        </div>
+        <div id="pod-stick" class="pod-badge offline" onclick="rescanHardware()" title="Clique para re-escanear hardware">
+          <div class="orb"></div>
+          <span id="pod-stick-text">MANCHE A-10C</span>
+        </div>
+        <div id="pod-throttle" class="pod-badge offline" onclick="rescanHardware()" title="Clique para re-escanear hardware">
+          <div class="orb"></div>
+          <span id="pod-throttle-text">MANETE HOTAS</span>
+        </div>
+        <div class="sidebar-footer-actions">
+          <button id="btn-sound" class="sound-toggle" onclick="toggleAudio()">FX: ATIVO</button>
+          <button class="btn-secondary" style="padding: 5px 9px; font-size: 11px;" onclick="rescanHardware()" title="Re-escanear USB/DirectInput">🔄</button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ================= RIGHT TACTICAL WORKSPACE ================= -->
+    <div class="mil-workspace">
+
+      <!-- Top Status Bar -->
+      <header class="mil-topbar">
+        <div class="topbar-left">
+          <span class="topbar-kicker" id="topbar-module-code">MOD // 01</span>
+          <span class="topbar-title" id="topbar-module-title">Cockpit & Telemetria em Tempo Real</span>
+        </div>
+        <div class="topbar-right">
+          <span class="mil-stamp">VID_044F // PID_0402 + PID_0404</span>
+          <span class="mil-stamp" style="color: var(--mil-hud); border-color: rgba(56,217,169,0.3);">DIRECTINPUT BRIDGE</span>
+        </div>
+      </header>
+
+      <!-- Notification Glow Bar -->
+      <div id="hud-alert-strip" class="hud-alert-strip hidden">
+        <div id="hud-alert-text">⚡ SHIFT LAYER ATIVA (PINKY LEVER PREMIDO)</div>
+      </div>
+
+      <!-- Main Viewport -->
+      <main class="mil-main">
+
+        <!-- TAB 1: COCKPIT DECK, THRUSTER TELEMETRY & HARDWARE LEDS -->
+        <div id="tab-dashboard" class="tab-content active">
+          <div class="dashboard-grid">
+            
+            <div class="cockpit-deck">
+              <!-- ACTIVE PROFILE STATUS BANNER -->
+          <div id="active-profile-banner" class="glass-panel hud-brackets" style="padding: 10px 14px; margin-bottom: 4px; border-left: 3px solid var(--neon-amber); background: linear-gradient(90deg, rgba(255, 170, 0, 0.08), rgba(7, 13, 25, 0.85));">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+              <div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span style="font-size: 10px; font-family: var(--font-mono); color: var(--neon-amber); text-transform: uppercase; letter-spacing: 1px;">PERFIL OPERACIONAL ATIVO:</span>
+                  <strong id="active-prof-title" style="font-size: 14px; color: #fff; letter-spacing: 0.5px;">⚔️ Combate / Dogfight</strong>
+                </div>
+                <div id="active-prof-desc" style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">
+                  Otimizado para Master Modes (SCM/NAV), seleção rápida de alvos, contramedidas em pânico e pós-combustão automática (>92%).
+                </div>
+              </div>
+              <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
+                <span id="badge-prof-boost" style="font-size: 10px; font-family: var(--font-mono); padding: 3px 8px; border-radius: 4px; background: rgba(0, 230, 118, 0.14); color: var(--neon-green); border: 1px solid rgba(0, 230, 118, 0.35);">🔥 Auto-Boost: ON</span>
+                <span id="badge-prof-curve" style="font-size: 10px; font-family: var(--font-mono); padding: 3px 8px; border-radius: 4px; background: rgba(0, 210, 255, 0.12); color: var(--neon-cyan); border: 1px solid rgba(0, 210, 255, 0.3);">📈 Curva: EXPO 2.0</span>
+                <span id="badge-prof-mode" style="font-size: 10px; font-family: var(--font-mono); padding: 3px 8px; border-radius: 4px; background: rgba(255, 170, 0, 0.12); color: var(--neon-amber); border: 1px solid rgba(255, 170, 0, 0.3);">🕹️ Slider: Limitador Veloc.</span>
+              </div>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px; padding-top: 5px; border-top: 1px solid rgba(255, 255, 255, 0.06); font-size: 10.5px; font-family: var(--font-mono);">
+              <span id="active-prof-highlights" style="color: var(--neon-cyan);">EAC: Master Mode (B) • SPDBRK: Cruise(C)/Travão(X) • BOAT: Quantum(B)/SCM • Boost: China FWD (B11)</span>
+              <span style="color: var(--text-dim);">Atalho HOTAS: <strong style="color: var(--neon-amber);">S4 (Shift) + S3 (BTN 03)</strong></span>
+            </div>
+          </div>
+
+          
+
+              <!-- Compact Split Row: Thrusters + 5 Base LEDs -->
+              <div class="telemetry-top-split">
+                <!-- LIVE THRUSTER & THROTTLE TELEMETRY BAR -->
+          <div class="glass-panel hud-brackets" style="padding: 12px 14px; margin-bottom: 4px; border-left: 3px solid var(--neon-cyan);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <div class="deck-section-title" style="margin: 0;">🚀 Telemetria em Tempo Real dos Propulsores (Manete Dual Throttle)</div>
+              <div id="cutoff-badge" style="font-size: 11px; font-family: var(--font-mono); padding: 2px 8px; border-radius: 4px; background: rgba(0, 230, 118, 0.12); color: var(--neon-green); border: 1px solid rgba(0, 230, 118, 0.35);">
+                ✅ DETENTOR IDLE: LIVRE (PRONTO A VOAR)
+              </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px;">
+              <!-- Right Throttle Handle (Rz) -->
+              <div style="background: rgba(0,0,0,0.35); padding: 8px 10px; border-radius: 6px; border: 1px solid rgba(0,210,255,0.15);">
+                <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px;">
+                  <span style="color: var(--text-secondary);">MANETE DIR. (js2_rotz):</span>
+                  <span id="val-thr-rz" style="color: var(--neon-cyan); font-family: var(--font-mono); font-weight: bold;">0%</span>
+                </div>
+                <div style="height: 6px; background: rgba(255,255,255,0.08); border-radius: 3px; overflow: hidden;">
+                  <div id="bar-thr-rz" style="width: 0%; height: 100%; background: linear-gradient(90deg, #0077ff, #00d2ff); transition: width 0.05s;"></div>
+                </div>
+              </div>
+
+              <!-- Left Throttle Handle (Z) -->
+              <div style="background: rgba(0,0,0,0.35); padding: 8px 10px; border-radius: 6px; border: 1px solid rgba(0,210,255,0.15);">
+                <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px;">
+                  <span style="color: var(--text-secondary);">MANETE ESQ. (js2_z):</span>
+                  <span id="val-thr-z" style="color: var(--neon-cyan); font-family: var(--font-mono); font-weight: bold;">0%</span>
+                </div>
+                <div style="height: 6px; background: rgba(255,255,255,0.08); border-radius: 3px; overflow: hidden;">
+                  <div id="bar-thr-z" style="width: 0%; height: 100%; background: linear-gradient(90deg, #0077ff, #00d2ff); transition: width 0.05s;"></div>
+                </div>
+              </div>
+
+              <!-- Center Friction Lever (Slider 1) -->
+              <div style="background: rgba(0,0,0,0.35); padding: 8px 10px; border-radius: 6px; border: 1px solid rgba(0,210,255,0.15);">
+                <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px;">
+                  <span id="slider-role-label" style="color: var(--text-secondary);">LIMITADOR VELOC. (Slider 1):</span>
+                  <span id="val-thr-slider" style="color: var(--neon-amber); font-family: var(--font-mono); font-weight: bold;">50%</span>
+                </div>
+                <div style="height: 6px; background: rgba(255,255,255,0.08); border-radius: 3px; overflow: hidden;">
+                  <div id="bar-thr-slider" style="width: 50%; height: 100%; background: linear-gradient(90deg, #ff8800, #ffcc00); transition: width 0.05s;"></div>
+                </div>
+              </div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px; padding-top: 6px; border-top: 1px solid rgba(255,255,255,0.06); font-size: 11px;">
+              <div>
+                <span style="color: var(--text-dim);">Pós-Combustão (Afterburner > 92%):</span>
+                <strong id="afterburner-status-label" style="color: var(--neon-cyan); margin-left: 4px;">Pronto</strong>
+              </div>
+              <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; color: var(--text-secondary);">
+                <input type="checkbox" id="chk-auto-boost" checked onchange="toggleAutoBoost(this.checked)" style="accent-color: var(--neon-cyan);">
+                Injetar Boost Automático (LShift) no Fim de Curso
+              </label>
+            </div>
+          </div>
+
+          
+                <!-- Warthog Throttle Base LEDs Controller -->
+          <div class="glass-panel hud-brackets" style="padding: 12px 14px; margin-bottom: 4px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <div class="deck-section-title" style="margin: 0;">💡 5 LEDs Verdes da Base Física da Manete (Controlo HID)</div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 11px; color: var(--text-secondary);">Retroiluminação:</span>
+                <input type="range" id="slider-backlight" min="0" max="5" value="3" style="width: 90px;" oninput="updateBacklight(this.value)">
+                <span id="label-backlight" style="font-size: 12px; font-weight: bold; color: var(--neon-cyan); min-width: 45px;">Nível 3</span>
+              </div>
+            </div>
+
+            <div class="base-leds-row">
+              <div id="warthog-led-1" class="base-led-unit" onclick="toggleHardwareLed(1)">
+                <div class="led-bulb"></div>
+                <span>LED 1: MASTER MODE</span>
+              </div>
+              <div id="warthog-led-2" class="base-led-unit" onclick="toggleHardwareLed(2)">
+                <div class="led-bulb"></div>
+                <span>LED 2: TREM ATERRAGEM</span>
+              </div>
+              <div id="warthog-led-3" class="base-led-unit" onclick="toggleHardwareLed(3)">
+                <div class="led-bulb"></div>
+                <span>LED 3: VTOL / HOVER</span>
+              </div>
+              <div id="warthog-led-4" class="base-led-unit" onclick="toggleHardwareLed(4)">
+                <div class="led-bulb"></div>
+                <span>LED 4: LUZES EXTERIORES</span>
+              </div>
+              <div id="warthog-led-5" class="base-led-unit" onclick="toggleHardwareLed(5)">
+                <div class="led-bulb"></div>
+                <span>LED 5: QUANTUM DRIVE</span>
+              </div>
+            </div>
+          </div>
+
+          
+              </div>
+
+              <!-- Tactical Deck Sub-Filter Bar -->
+              <div class="deck-filter-bar">
+                <span style="font-family: var(--font-mono); font-size: 11px; color: var(--text-secondary); letter-spacing: 0.8px;">
+                  SEÇÃO DE CONTROLOS FÍSICOS:
+                </span>
+                <div class="deck-filter-pills">
+                  <button class="deck-filter-btn active" onclick="filterCockpitDeck('all', this)">TODOS (51B)</button>
+                  <button class="deck-filter-btn" onclick="filterCockpitDeck('base', this)">BASE MANETE (16-32)</button>
+                  <button class="deck-filter-btn" onclick="filterCockpitDeck('grips', this)">PUNHOS MANETE (01-15)</button>
+                  <button class="deck-filter-btn" onclick="filterCockpitDeck('stick', this)">MANCHE A-10C (01-19)</button>
+                </div>
+              </div>
+
+              <div id="deck-group-base" class="deck-section-group">
+                <div class="deck-section-title">🎛️ Consola da Base da Manete Dupla — Todos os Interruptores Físicos (BTN 16 a BTN 32)</div>
+          
+          <div class="switches-grid">
+            
+            <!-- 1. EFL NORM / OVER (BTN 16) -->
+            <div id="card-efl" class="glass-panel switch-card hud-brackets" onclick="manualTrigger('FUEL_L_ON')">
+              <div class="switch-header">
+                <div>
+                  <div class="switch-label">EFL NORM (BTN 16)</div>
+                  <div class="switch-sub">Fuel Flow Left • Propulsores</div>
+                </div>
+                <div class="switch-status-pill" id="pill-efl">OVER (OFF)</div>
+              </div>
+              <div class="switch-visual">
+                <div class="toggle-housing">
+                  <div class="toggle-knob"></div>
+                </div>
+              </div>
+              <div class="switch-action-tag">
+                <span>NORM: Motor ON (I)</span>
+                <span>OVER: OFF (I)</span>
+              </div>
+            </div>
+
+            <!-- 2. EFR NORM / OVER (BTN 17) -->
+            <div id="card-efr" class="glass-panel switch-card hud-brackets" onclick="manualTrigger('FUEL_R_ON')">
+              <div class="switch-header">
+                <div>
+                  <div class="switch-label">EFR NORM (BTN 17)</div>
+                  <div class="switch-sub">Fuel Flow Right • Armas</div>
+                </div>
+                <div class="switch-status-pill" id="pill-efr">OVER (OFF)</div>
+              </div>
+              <div class="switch-visual">
+                <div class="toggle-housing">
+                  <div class="toggle-knob"></div>
+                </div>
+              </div>
+              <div class="switch-action-tag">
+                <span>NORM: Armas ON (P)</span>
+                <span>OVER: OFF (P)</span>
+              </div>
+            </div>
+
+            <!-- 3. ENG OPER LEFT (BTN 18 / 31 - 3 Posições) -->
+            <div id="card-eol" class="glass-panel switch-card hud-brackets" onclick="manualTrigger('ENG_L_IGN')">
+              <div class="switch-header">
+                <div>
+                  <div class="switch-label">ENG OPER L (BTN 18/31)</div>
+                  <div class="switch-sub">IGN (31) / NORM / MOTOR (18)</div>
+                </div>
+                <div class="switch-status-pill" id="pill-eol">NORM (CENTRO)</div>
+              </div>
+              <div class="switch-visual">
+                <div class="lever-3pos-housing">
+                  <div class="lever-pin pos-mid" id="lever-eol"></div>
+                </div>
+              </div>
+              <div class="switch-action-tag">
+                <span>31: Visor/Ign</span>
+                <span>18: Motor (I)</span>
+              </div>
+            </div>
+
+            <!-- 4. ENG OPER RIGHT (BTN 19 / 32 - 3 Posições) -->
+            <div id="card-eor" class="glass-panel switch-card hud-brackets" onclick="manualTrigger('ENG_R_IGN')">
+              <div class="switch-header">
+                <div>
+                  <div class="switch-label">ENG OPER R (BTN 19/32)</div>
+                  <div class="switch-sub">IGN (32) / NORM / MOTOR (19)</div>
+                </div>
+                <div class="switch-status-pill" id="pill-eor">NORM (CENTRO)</div>
+              </div>
+              <div class="switch-visual">
+                <div class="lever-3pos-housing">
+                  <div class="lever-pin pos-mid" id="lever-eor"></div>
+                </div>
+              </div>
+              <div class="switch-action-tag">
+                <span>32: Ign/Eject</span>
+                <span>19: Armas (P)</span>
+              </div>
+            </div>
+
+            <!-- 5. APU START (BTN 20) -->
+            <div id="card-apu" class="glass-panel switch-card hud-brackets" onclick="manualTrigger('APU_ON')">
+              <div class="switch-header">
+                <div>
+                  <div class="switch-label">APU START (BTN 20)</div>
+                  <div class="switch-sub">Flight Ready / Energia Geral</div>
+                </div>
+                <div class="switch-status-pill" id="pill-apu">DESLIGADO</div>
+              </div>
+              <div class="switch-visual">
+                <div class="toggle-housing">
+                  <div class="toggle-knob"></div>
+                </div>
+              </div>
+              <div class="switch-action-tag">
+                <span>ON: Alt+R (Ready)</span>
+                <span>OFF: U (Power)</span>
+              </div>
+            </div>
+
+            <!-- 6. FLAPS (BTN 22 / 23 - 3 Posições) -->
+            <div id="card-flaps" class="glass-panel switch-card hud-brackets" onclick="manualTrigger('FLAPS_UP')">
+              <div class="switch-header">
+                <div>
+                  <div class="switch-label">FLAPS (BTN 22/23)</div>
+                  <div class="switch-sub" id="flaps-sub">UP (Cruise) / MVR / DN (VTOL)</div>
+                </div>
+                <div class="switch-status-pill" id="pill-flaps">MVR (VOO)</div>
+              </div>
+              <div class="switch-visual">
+                <div class="lever-3pos-housing">
+                  <div class="lever-pin pos-mid" id="lever-flaps"></div>
+                </div>
+              </div>
+              <div class="switch-action-tag">
+                <span id="flaps-tag-a">22: Cruise (C)</span>
+                <span id="flaps-tag-b">23: VTOL (K)</span>
+              </div>
+            </div>
+
+            <!-- 7. EAC ARM / OFF (BTN 24) -->
+            <div id="card-eac" class="glass-panel switch-card hud-brackets" onclick="manualTrigger('EAC_ON')">
+              <div class="switch-header">
+                <div>
+                  <div class="switch-label">EAC ARM (BTN 24)</div>
+                  <div class="switch-sub" id="eac-sub">Escudos / Master Mode</div>
+                </div>
+                <div class="switch-status-pill" id="pill-eac">OFF (SCM)</div>
+              </div>
+              <div class="switch-visual">
+                <div class="toggle-housing">
+                  <div class="toggle-knob"></div>
+                </div>
+              </div>
+              <div class="switch-action-tag">
+                <span id="eac-tag">ARM: Escudos (O) | NAV</span>
+              </div>
+            </div>
+
+            <!-- 8. RDR ALTM NRM / DIS (BTN 25) -->
+            <div id="card-rdr" class="glass-panel switch-card hud-brackets" onclick="manualTrigger('RDR_ALTM_ON')">
+              <div class="switch-header">
+                <div>
+                  <div class="switch-label">RDR ALTM (BTN 25)</div>
+                  <div class="switch-sub">Radar Altimeter • Trem Aterr.</div>
+                </div>
+                <div class="switch-status-pill" id="pill-rdr">DIS (BAIXO)</div>
+              </div>
+              <div class="switch-visual">
+                <div class="toggle-housing">
+                  <div class="toggle-knob"></div>
+                </div>
+              </div>
+              <div class="switch-action-tag">
+                <span>NRM: Subir (N)</span>
+                <span>DIS: Baixar (N)</span>
+              </div>
+            </div>
+
+            <!-- 9. AUTOPILOT ENGAGE (BTN 26) -->
+            <div id="card-apeng" class="glass-panel switch-card hud-brackets" onclick="manualTrigger('AP_ENGAGE_PRESS')">
+              <div class="switch-header">
+                <div>
+                  <div class="switch-label">AP ENGAGE (BTN 26)</div>
+                  <div class="switch-sub">Botão Autopilot • Quantum/ATC</div>
+                </div>
+                <div class="switch-status-pill" id="pill-apeng">MOMENTÂNEO</div>
+              </div>
+              <div class="switch-visual">
+                <button class="btn-glow" style="padding: 6px 12px; font-size: 11px;">
+                  🌌 QUANTUM / ATC (B26)
+                </button>
+              </div>
+              <div class="switch-action-tag">
+                <span>Spool / Salto Quântico</span>
+              </div>
+            </div>
+
+            <!-- 10. AUTOPILOT SELECT (BTN 27 / 28 - 3 Posições) -->
+            <div id="card-apsel" class="glass-panel switch-card hud-brackets" onclick="manualTrigger('AP_PATH')">
+              <div class="switch-header">
+                <div>
+                  <div class="switch-label">AP SELECT (BTN 27/28)</div>
+                  <div class="switch-sub">PATH / ALT-HDG / ALT • Portas</div>
+                </div>
+                <div class="switch-status-pill" id="pill-apsel">ALT/HDG (MID)</div>
+              </div>
+              <div class="switch-visual">
+                <div class="lever-3pos-housing">
+                  <div class="lever-pin pos-mid" id="lever-apsel"></div>
+                </div>
+              </div>
+              <div class="switch-action-tag">
+                <span>27: Abrir (Alt+K)</span>
+                <span>28: Trancar</span>
+              </div>
+            </div>
+
+            <!-- 11. LDG HORN SILENCE (BTN 21) -->
+            <div id="card-ldghorn" class="glass-panel switch-card hud-brackets" onclick="manualTrigger('LDGHORN_PRESS')" style="border-color: rgba(255, 170, 0, 0.4);">
+              <div class="switch-header">
+                <div>
+                  <div class="switch-label" style="color: var(--neon-amber);">LDG HORN (BTN 21)</div>
+                  <div class="switch-sub">Torre ATC / Aterragem</div>
+                </div>
+                <div class="switch-status-pill" id="pill-ldghorn">MOMENTÂNEO</div>
+              </div>
+              <div class="switch-visual">
+                <button class="btn-glow" style="border-color: var(--neon-amber); color: var(--neon-amber); box-shadow: 0 0 15px rgba(255, 170, 0, 0.2); padding: 6px 12px; font-size: 11px;">
+                  📡 CHAMAR ATC (ALT+N)
+                </button>
+              </div>
+              <div class="switch-action-tag">
+                <span>Atalho Direto: Alt+N</span>
+              </div>
+            </div>
+
+            <!-- 12. IDLE CUTOFF RIGHT (BTN 29) -->
+            <div id="card-cutl" class="glass-panel switch-card hud-brackets" onclick="manualTrigger('IDLE_R_OFF')">
+              <div class="switch-header">
+                <div>
+                  <div class="switch-label">CUTOFF DIR (BTN 29)</div>
+                  <div class="switch-sub">Batente Físico Manete Dir.</div>
+                </div>
+                <div class="switch-status-pill" id="pill-cutl">IDLE (LIVRE)</div>
+              </div>
+              <div class="switch-visual">
+                <div class="toggle-housing">
+                  <div class="toggle-knob"></div>
+                </div>
+              </div>
+              <div class="switch-action-tag">
+                <span>IDLE: Voo</span>
+                <span>OFF(29): Corte</span>
+              </div>
+            </div>
+
+            <!-- 13. IDLE CUTOFF LEFT (BTN 30) -->
+            <div id="card-cutr" class="glass-panel switch-card hud-brackets" onclick="manualTrigger('IDLE_L_OFF')">
+              <div class="switch-header">
+                <div>
+                  <div class="switch-label">CUTOFF ESQ (BTN 30)</div>
+                  <div class="switch-sub">Batente Físico Manete Esq.</div>
+                </div>
+                <div class="switch-status-pill" id="pill-cutr">IDLE (LIVRE)</div>
+              </div>
+              <div class="switch-visual">
+                <div class="toggle-housing">
+                  <div class="toggle-knob"></div>
+                </div>
+              </div>
+              <div class="switch-action-tag">
+                <span>IDLE: Voo</span>
+                <span>OFF(30): Corte</span>
+              </div>
+            </div>
+
+          </div>
+
+          
+              </div>
+
+              <div id="deck-group-grips" class="deck-section-group">
+                <div class="deck-section-title" style="margin-top: 6px;">🕹️ Punhos Esquerdo e Direito da Manete Dupla — Todos os Interruptores, Hats e Botões (BTN 01 a BTN 15 + POV 1)</div>
+
+          <div class="switches-grid">
+
+            <!-- 14. SPEEDBRAKE (BTN 07 / 08 - 3 Posições) -->
+            <div id="card-speedbrake" class="glass-panel switch-card hud-brackets" onclick="manualTrigger('SPDBRK_AFT')">
+              <div class="switch-header">
+                <div>
+                  <div class="switch-label">SPDBRK (BTN 07/08)</div>
+                  <div class="switch-sub" id="spdbrk-sub">Cruise (07) / Space Brake (08)</div>
+                </div>
+                <div class="switch-status-pill" id="pill-speedbrake">CENTRO</div>
+              </div>
+              <div class="switch-visual">
+                <div class="lever-3pos-housing">
+                  <div class="lever-pin pos-mid" id="lever-speedbrake"></div>
+                </div>
+              </div>
+              <div class="switch-action-tag">
+                <span id="spdbrk-tag-a">07: Cruise (C)</span>
+                <span id="spdbrk-tag-b">08: Travão (X)</span>
+              </div>
+            </div>
+
+            <!-- 15. BOAT SWITCH (BTN 09 / 10 - 3 Posições) -->
+            <div id="card-boat" class="glass-panel switch-card hud-brackets" onclick="manualTrigger('BOAT_FWD')">
+              <div class="switch-header">
+                <div>
+                  <div class="switch-label">BOAT (BTN 09/10)</div>
+                  <div class="switch-sub" id="boat-sub">Quantum NAV (09) / SCM (10)</div>
+                </div>
+                <div class="switch-status-pill" id="pill-boat">BSM (CENTRO)</div>
+              </div>
+              <div class="switch-visual">
+                <div class="lever-3pos-housing">
+                  <div class="lever-pin pos-mid" id="lever-boat"></div>
+                </div>
+              </div>
+              <div class="switch-action-tag">
+                <span id="boat-tag-a">09: Quantum (B)</span>
+                <span id="boat-tag-b">10: Armas SCM</span>
+              </div>
+            </div>
+
+            <!-- 16. CHINA HAT (BTN 11 / 12 - 3 Posições c/ Mola) -->
+            <div id="card-china" class="glass-panel switch-card hud-brackets" onclick="manualTrigger('CHINA_FWD_PRESS')">
+              <div class="switch-header">
+                <div>
+                  <div class="switch-label">CHINA HAT (BTN 11/12)</div>
+                  <div class="switch-sub" id="china-sub">Boost (11) / Recuar (12)</div>
+                </div>
+                <div class="switch-status-pill" id="pill-china">CHM (CENTRO)</div>
+              </div>
+              <div class="switch-visual">
+                <div class="lever-3pos-housing">
+                  <div class="lever-pin pos-mid" id="lever-china"></div>
+                </div>
+              </div>
+              <div class="switch-action-tag">
+                <span id="china-tag-a">11: Boost/Ping</span>
+                <span id="china-tag-b">12: Recuar (S)</span>
+              </div>
+            </div>
+
+            <!-- 17. PINKY SWITCH (BTN 13 / 14 - 3 Posições) -->
+            <div id="card-pinky" class="glass-panel switch-card hud-brackets" onclick="manualTrigger('PINKY_FWD')">
+              <div class="switch-header">
+                <div>
+                  <div class="switch-label">PINKY (BTN 13/14)</div>
+                  <div class="switch-sub">Faróis (13) / Luz Cabine (14)</div>
+                </div>
+                <div class="switch-status-pill" id="pill-pinky">PSM (OFF)</div>
+              </div>
+              <div class="switch-visual">
+                <div class="lever-3pos-housing">
+                  <div class="lever-pin pos-mid" id="lever-pinky"></div>
+                </div>
+              </div>
+              <div class="switch-action-tag">
+                <span>13: Faróis (L)</span>
+                <span>14: Cabine/ESP</span>
+              </div>
+            </div>
+
+            <!-- 18. LEFT THROTTLE BUTTON (BTN 15) -->
+            <div id="card-ltb" class="glass-panel switch-card hud-brackets" onclick="manualTrigger('LTB_PRESS')">
+              <div class="switch-header">
+                <div>
+                  <div class="switch-label">LEFT BTN (BTN 15)</div>
+                  <div class="switch-sub">Botão Vermelho Punho Esq.</div>
+                </div>
+                <div class="switch-status-pill" id="pill-ltb">MOMENTÂNEO</div>
+              </div>
+              <div class="switch-visual">
+                <button class="btn-glow" style="padding: 6px 12px; font-size: 11px;">
+                  🛬 AUTOLAND / READY (B15)
+                </button>
+              </div>
+              <div class="switch-action-tag">
+                <span>Autoland (N) / Alt+R</span>
+              </div>
+            </div>
+
+            <!-- 19. SLEW CONTROL PUSH (BTN 01) -->
+            <div id="card-slewbtn" class="glass-panel switch-card hud-brackets" onclick="manualTrigger('SLEW_PUSH_PRESS')">
+              <div class="switch-header">
+                <div>
+                  <div class="switch-label">SLEW PUSH (BTN 01)</div>
+                  <div class="switch-sub">Mini-Stick Frontal + Push</div>
+                </div>
+                <div class="switch-status-pill" id="pill-slewbtn">LIVRE</div>
+              </div>
+              <div class="switch-visual">
+                <button class="btn-glow" style="padding: 6px 12px; font-size: 11px;">
+                  🎯 MATCH VEL / F (BTN 01)
+                </button>
+              </div>
+              <div class="switch-action-tag">
+                <span>X/Y: Strafe | B1: Match Vel</span>
+              </div>
+            </div>
+
+            <!-- 20. MIC SWITCH 5-WAY HAT (BTN 02..06) -->
+            <div id="card-mic" class="glass-panel switch-card hud-brackets" onclick="manualTrigger('MIC_UP_PRESS')">
+              <div class="switch-header">
+                <div>
+                  <div class="switch-label">MIC HAT (BTN 02..06)</div>
+                  <div class="switch-sub">Chapéu Lateral 5 Direções</div>
+                </div>
+                <div class="switch-status-pill" id="pill-mic">CENTRO</div>
+              </div>
+              <div class="switch-visual">
+                <button class="btn-glow" id="vis-mic" style="padding: 6px 12px; font-size: 11px;">
+                  ⚡ 2:PTT 3:Scan 4:Cam 5:Min
+                </button>
+              </div>
+              <div class="switch-action-tag">
+                <span>B2..B6: Modos & Energia</span>
+              </div>
+            </div>
+
+            <!-- 21. COOLIE SWITCH 4-WAY HAT (POV 1) -->
+            <div id="card-coolie" class="glass-panel switch-card hud-brackets">
+              <div class="switch-header">
+                <div>
+                  <div class="switch-label">COOLIE HAT (POV 1)</div>
+                  <div class="switch-sub">Chapéu Frontal (4 Direções)</div>
+                </div>
+                <div class="switch-status-pill" id="pill-coolie">CENTER</div>
+              </div>
+              <div class="switch-visual">
+                <button class="btn-glow" id="vis-coolie" style="padding: 6px 12px; font-size: 11px;">
+                  🕹️ STRAFE: NEUTRO
+                </button>
+              </div>
+              <div class="switch-action-tag">
+                <span>Cima/Baixo/Esq/Dir: Strafe</span>
+              </div>
+            </div>
+
+          </div>
+
+          
+              </div>
+
+              <div id="deck-group-stick" class="deck-section-group">
+                <div class="deck-section-title" style="margin-top: 6px;">🎯 Manche A-10C (Joystick js1) — Todos os 19 Botões Físicos, Gatilho Duplo, Shift e 4 Hats (BTN 01 a BTN 19 + POV 1)</div>
+
+          <div class="switches-grid">
+
+            <!-- J1. TG1 GATILHO ETAPA 1 (BTN 01) -->
+            <div id="card-stk-1" class="glass-panel switch-card hud-brackets">
+              <div class="switch-header">
+                <div>
+                  <div class="switch-label">TG1 GATILHO 1 (BTN 01)</div>
+                  <div class="switch-sub">1ª Etapa • Fogo Primário</div>
+                </div>
+                <div class="switch-status-pill" id="pill-stk-1">LIVRE</div>
+              </div>
+              <div class="switch-visual">
+                <button class="btn-glow" id="vis-stk-1" style="padding: 6px 12px; font-size: 11px;">
+                  🔫 ARMAS GRUPO 1 / LASER
+                </button>
+              </div>
+              <div class="switch-action-tag">
+                <span>v_attack1_group1 • Scan</span>
+              </div>
+            </div>
+
+            <!-- J2. TG2 GATILHO ETAPA 2 (BTN 06) -->
+            <div id="card-stk-6" class="glass-panel switch-card hud-brackets">
+              <div class="switch-header">
+                <div>
+                  <div class="switch-label">TG2 GATILHO 2 (BTN 06)</div>
+                  <div class="switch-sub">2ª Etapa Fundo • Fogo Total</div>
+                </div>
+                <div class="switch-status-pill" id="pill-stk-6">LIVRE</div>
+              </div>
+              <div class="switch-visual">
+                <button class="btn-glow" id="vis-stk-6" style="padding: 6px 12px; font-size: 11px;">
+                  💥 ARMAS GRUPO 2 (1+2)
+                </button>
+              </div>
+              <div class="switch-action-tag">
+                <span>v_attack1_group2 • Salva</span>
+              </div>
+            </div>
+
+            <!-- J3. S2 WEAPON RELEASE (BTN 02) -->
+            <div id="card-stk-2" class="glass-panel switch-card hud-brackets" style="border-color: rgba(255, 51, 85, 0.35);">
+              <div class="switch-header">
+                <div>
+                  <div class="switch-label" style="color: var(--neon-red);">S2 WPN REL (BTN 02)</div>
+                  <div class="switch-sub">Botão Vermelho Superior</div>
+                </div>
+                <div class="switch-status-pill" id="pill-stk-2">LIVRE</div>
+              </div>
+              <div class="switch-visual">
+                <button class="btn-glow" id="vis-stk-2" style="border-color: var(--neon-red); color: #ff8899; padding: 6px 12px; font-size: 11px;">
+                  🚀 LANÇAR MÍSSIL (BTN 02)
+                </button>
+              </div>
+              <div class="switch-action-tag">
+                <span>Míssil | +Shift: Ejetar Carga</span>
+              </div>
+            </div>
+
+            <!-- J4. S1 MASTER MODE BUTTON (BTN 05) -->
+            <div id="card-stk-5" class="glass-panel switch-card hud-brackets">
+              <div class="switch-header">
+                <div>
+                  <div class="switch-label">S1 MASTER MODE (BTN 05)</div>
+                  <div class="switch-sub">Botão Lateral Indicador</div>
+                </div>
+                <div class="switch-status-pill" id="pill-stk-5">LIVRE</div>
+              </div>
+              <div class="switch-visual">
+                <button class="btn-glow" id="vis-stk-5" style="padding: 6px 12px; font-size: 11px;">
+                  🔄 SCM / NAV MODE (B)
+                </button>
+              </div>
+              <div class="switch-action-tag">
+                <span>Master Mode | +Shift: VTOL</span>
+              </div>
+            </div>
+
+            <!-- J5. S3 NOSEWHEEL STEERING (BTN 03) -->
+            <div id="card-stk-3" class="glass-panel switch-card hud-brackets">
+              <div class="switch-header">
+                <div>
+                  <div class="switch-label">S3 NWS / GIMBAL (BTN 03)</div>
+                  <div class="switch-sub">Botão Mindinho Frontal</div>
+                </div>
+                <div class="switch-status-pill" id="pill-stk-3">LIVRE</div>
+              </div>
+              <div class="switch-visual">
+                <button class="btn-glow" id="vis-stk-3" style="padding: 6px 12px; font-size: 11px;">
+                  🎯 GIMBAL / MATCH VEL
+                </button>
+              </div>
+              <div class="switch-action-tag">
+                <span>Mira Gimbal | +Shift: Trás</span>
+              </div>
+            </div>
+
+            <!-- J6. S4 PINKY LEVER SHIFT (BTN 04) -->
+            <div id="card-stk-4" class="glass-panel switch-card hud-brackets" style="border-color: rgba(255, 170, 0, 0.4);">
+              <div class="switch-header">
+                <div>
+                  <div class="switch-label" style="color: var(--neon-amber);">S4 PINKY LEVER (BTN 04)</div>
+                  <div class="switch-sub">Alavanca Mindinho • SHIFT</div>
+                </div>
+                <div class="switch-status-pill" id="pill-stk-4">NORMAL</div>
+              </div>
+              <div class="switch-visual">
+                <button class="btn-glow" id="vis-stk-4" style="border-color: var(--neon-amber); color: var(--neon-amber); padding: 6px 12px; font-size: 11px;">
+                  ⚡ SHIFT GLOBAL + DECOUPLED
+                </button>
+              </div>
+              <div class="switch-action-tag">
+                <span>Duplica Botões | Alt+C</span>
+              </div>
+            </div>
+
+            <!-- J7. TRIM HAT 4-WAY (POV 1) -->
+            <div id="card-stk-pov" class="glass-panel switch-card hud-brackets">
+              <div class="switch-header">
+                <div>
+                  <div class="switch-label">TRIM HAT (POV 1)</div>
+                  <div class="switch-sub">Chapéu Topo • Capacitores</div>
+                </div>
+                <div class="switch-status-pill" id="pill-stk-pov">CENTER</div>
+              </div>
+              <div class="switch-visual">
+                <button class="btn-glow" id="vis-stk-pov" style="padding: 6px 12px; font-size: 11px;">
+                  🔋 CAPACITORES: EQUILÍBRIO
+                </button>
+              </div>
+              <div class="switch-action-tag">
+                <span>U:Mot(F6) R:Esc(F7) L:Arm(F5) D:Rst</span>
+              </div>
+            </div>
+
+            <!-- J8. TMS HAT 4-WAY (BTN 07..10) -->
+            <div id="card-stk-tms" class="glass-panel switch-card hud-brackets">
+              <div class="switch-header">
+                <div>
+                  <div class="switch-label">TMS HAT (BTN 07..10)</div>
+                  <div class="switch-sub">Target Management (Alvos)</div>
+                </div>
+                <div class="switch-status-pill" id="pill-stk-tms">CENTRO</div>
+              </div>
+              <div class="switch-visual">
+                <button class="btn-glow" id="vis-stk-tms" style="padding: 6px 12px; font-size: 11px;">
+                  🎯 7:Mira(T) 8:Hostil+ 9:Próx 10:Ant
+                </button>
+              </div>
+              <div class="switch-action-tag">
+                <span>B07..B10: Seleção de Alvos</span>
+              </div>
+            </div>
+
+            <!-- J9. DMS HAT 4-WAY (BTN 11..14) -->
+            <div id="card-stk-dms" class="glass-panel switch-card hud-brackets">
+              <div class="switch-header">
+                <div>
+                  <div class="switch-label">DMS HAT (BTN 11..14)</div>
+                  <div class="switch-sub">Data Management (Radar/Scan)</div>
+                </div>
+                <div class="switch-status-pill" id="pill-stk-dms">CENTRO</div>
+              </div>
+              <div class="switch-visual">
+                <button class="btn-glow" id="vis-stk-dms" style="padding: 6px 12px; font-size: 11px;">
+                  📡 11:Ping(Tab) 12:Alvo 13:Foco 14:Âng
+                </button>
+              </div>
+              <div class="switch-action-tag">
+                <span>B11..B14: Radar | +Shift: Escudos</span>
+              </div>
+            </div>
+
+            <!-- J10. CMS HAT 5-WAY (BTN 15..19) -->
+            <div id="card-stk-cms" class="glass-panel switch-card hud-brackets">
+              <div class="switch-header">
+                <div>
+                  <div class="switch-label">CMS HAT (BTN 15..19)</div>
+                  <div class="switch-sub">Chapéu Polegar • Contramedidas</div>
+                </div>
+                <div class="switch-status-pill" id="pill-stk-cms">CENTRO</div>
+              </div>
+              <div class="switch-visual">
+                <button class="btn-glow" id="vis-stk-cms" style="padding: 6px 12px; font-size: 11px;">
+                  🛡️ 15:Chaff(J) 17:Flare(H) 19:Panic
+                </button>
+              </div>
+              <div class="switch-action-tag">
+                <span>B15..B19: Decoys, Noise & Salva</span>
+              </div>
+            </div>
+
+          </div>
+        
+              </div>
+            </div>
+
+            <!-- Right Telemetry & Radar Sidebar -->
+        <div class="telemetry-sidebar">
+          
+          <!-- Slew Radar Scope -->
+          <div class="glass-panel radar-card hud-brackets">
+            <div class="deck-section-title" style="width: 100%;">Radar Slew (js2_x / js2_y) & Manche</div>
+            <div class="radar-scope">
+              <div class="crosshair-h"></div>
+              <div class="crosshair-v"></div>
+              <div class="deadzone-ring" id="radar-deadzone-ring"></div>
+              <div class="slew-dot" id="radar-slew-dot"></div>
+            </div>
+            <div style="font-size: 11px; color: var(--text-secondary); text-align: center; line-height: 1.5;">
+              Slew X: <span id="val-slew-x" style="color: var(--neon-cyan);">32767</span> | 
+              Slew Y: <span id="val-slew-y" style="color: var(--neon-cyan);">32767</span><br>
+              Manche X: <span id="val-stick-x" style="color: var(--neon-green);">32767</span> | 
+              Manche Y: <span id="val-stick-y" style="color: var(--neon-green);">32767</span>
+            </div>
+          </div>
+
+          <!-- Live Event Log Terminal -->
+          <div class="glass-panel log-terminal hud-brackets">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; gap: 6px; flex-wrap: wrap;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <div class="deck-section-title" style="margin: 0;">📜 Registo de Teclas & Botões Físicos</div>
+                <span id="log-count-badge" style="font-size: 10px; font-family: var(--font-mono); padding: 1px 6px; border-radius: 3px; background: rgba(0, 210, 255, 0.15); color: var(--neon-cyan); border: 1px solid rgba(0, 210, 255, 0.35);">1 registo</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <label style="display: flex; align-items: center; gap: 4px; font-size: 10px; color: var(--text-secondary); cursor: pointer;" title="Deslocar automaticamente para o último botão premido">
+                  <input type="checkbox" id="chk-log-autoscroll" checked style="accent-color: var(--neon-cyan);">
+                  Auto-Scroll
+                </label>
+                <button class="btn-secondary" style="padding: 2px 6px; font-size: 10px;" onclick="scrollLogToTop()" title="Ir para o topo do registo">⬆️</button>
+                <button class="btn-secondary" style="padding: 2px 6px; font-size: 10px;" onclick="scrollLogToBottom()" title="Ir para o fim do registo">⬇️</button>
+                <button class="btn-secondary" style="padding: 2px 8px; font-size: 10px; border-color: rgba(255, 51, 85, 0.4); color: var(--neon-red);" onclick="clearLogStream()" title="Limpar histórico de eventos">🗑️ Limpar</button>
+              </div>
+            </div>
+            <div class="terminal-stream" id="log-stream">
+              <div class="log-entry">
+                <span class="timestamp">[PRONTO]</span> A monitorizar 19 botões do Manche + 32 botões da Manete + 7 Eixos.
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      
+
+          </div>
+        </div>
+
+        <!-- TAB 2: MAPA TOTAL VISUAL DOS 2 JOYSTICKS COM MIRA HUD FIXA -->
+        <div id="tab-cheatsheet" class="tab-content">
+          <div class="glass-panel hud-brackets" style="padding: 14px 16px; flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden;">
+            
+            <!-- TOP TOOLBAR -->
+            <div class="vmap-toolbar">
+              <div>
+                <div class="deck-section-title" style="margin: 0;">🗺️ Mapeamento Visual Interativo (Manche A-10C + Manete Dupla)</div>
+                <p style="font-size: 12px; color: var(--text-secondary); margin-top: 2px;">
+                  Passa o rato por qualquer botão da lista para a <strong>mira HUD apontar na imagem fixa</strong>, ou clica em <strong style="color:var(--mil-hud)">✏️ Editar</strong> para remapear.
+                </p>
+              </div>
+              
+              <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <div style="position: relative;">
+                  <input type="text" id="vmap-search-input" placeholder="Filtrar botão, tecla ou ação..." oninput="filterVisualMap(this.value)" class="form-input" style="padding: 5px 10px 5px 26px; font-size: 11px; height: 30px; width: 210px;">
+                  <span style="position: absolute; left: 8px; top: 7px; font-size: 11px; pointer-events: none; opacity: 0.6;">🔍</span>
+                </div>
+
+                <select id="vmap-kit-selector" class="form-input" style="height: 30px; padding: 3px 8px; font-size: 11px; color: var(--mil-amber); border-color: rgba(240,164,38,0.45);" onchange="selectHotasKit(this.value)" title="Selecionar Modelo HOTAS">
+                  <option value="warthog">🕹️ Thrustmaster Warthog (A-10C)</option>
+                  <option value="saitek_x56">🕹️ Saitek / Logitech X56 Rhino</option>
+                  <option value="tm_t16000m">🕹️ Thrustmaster T.16000M + TWCS</option>
+                  <option value="tm_tca">🕹️ Thrustmaster TCA Airbus</option>
+                  <option value="tm_tflight">🕹️ Thrustmaster T.Flight HOTAS</option>
+                </select>
+
+                <div class="vmap-view-pills">
+                  <button class="vmap-view-btn active" id="vmap-btn-view-both" onclick="setVisualMapView('both')">Ambos</button>
+                  <button class="vmap-view-btn" id="vmap-btn-view-stick" onclick="setVisualMapView('stick')">Só Manche</button>
+                  <button class="vmap-view-btn" id="vmap-btn-view-throttle" onclick="setVisualMapView('throttle')">Só Manete</button>
+                </div>
+
+                <button class="btn-secondary" onclick="window.print()" style="padding: 5px 10px; font-size: 11px; height: 30px;">🖨️ PDF</button>
+              </div>
+            </div>
+
+            <!-- DUAL COLUMN VISUAL CONTAINER (Images Pinned + Lists Scroll Independently) -->
+            <div id="vmap-main-grid" class="vmap-dual-grid">
+              
+              <!-- COLUNA 1: MANCHE A-10C -->
+              <div id="vmap-col-stick" class="vmap-device-card glass-panel">
+                <div class="cheat-card-header">
+                  <span class="device-tag" id="vmap-stick-header-tag">MANCHE A-10C (js1 • PID 0402)</span>
+                  <span class="mode-tag" id="vmap-stick-mode-tag">19 BOTÕES + TRIM HAT + 2 EIXOS</span>
+                </div>
+
+                <div class="vmap-showcase-box">
+                  <div class="vmap-img-glow-pedestal"></div>
+                  <div class="vmap-stage" id="vmap-stage-stick">
+                    <img src="/warthog_stick_526x1181.png" alt="Thrustmaster Warthog Flight Stick" class="vmap-stick-img" id="vmap-img-stick">
+                    <div class="vmap-overlay-layer" id="vmap-overlay-stick">
+                      <div class="vmap-reticle" id="vmap-reticle-stick">
+                        <div class="vmap-reticle-ring"></div>
+                        <div class="vmap-reticle-ping"></div>
+                        <div class="vmap-reticle-cross"></div>
+                        <div class="vmap-reticle-callout" id="vmap-callout-stick">
+                          <span class="vmap-callout-badge" id="vmap-badge-stick">BTN 01</span>
+                          <span class="vmap-callout-text" id="vmap-title-stick">TG1 (Gatilho)</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="vmap-showcase-caption">
+                    <span style="color: var(--mil-hud);">HOVER NA LISTA OU NA IMAGEM PARA APONTAR & EDITAR</span>
+                  </div>
+                </div>
+
+                <div id="vmap-stick-buttons-container" class="vmap-scroll-list">
+                  <!-- Preenchido via app.js -->
+                </div>
+              </div>
+
+              <!-- COLUNA 2: MANETE DUPLA -->
+              <div id="vmap-col-throttle" class="vmap-device-card glass-panel">
+                <div class="cheat-card-header">
+                  <span class="device-tag" id="vmap-throttle-header-tag" style="border-color: rgba(232,162,36,0.45); color: var(--mil-amber); background: rgba(232,162,36,0.1);">MANETE DUPLA (js2 • PID 0404)</span>
+                  <span class="mode-tag" id="vmap-throttle-mode-tag">32 BOTÕES + COOLIE HAT + 5 EIXOS</span>
+                </div>
+
+                <div class="vmap-showcase-box">
+                  <div class="vmap-img-glow-pedestal throttle-pedestal"></div>
+                  <div class="vmap-stage" id="vmap-stage-throttle">
+                    <img src="/warthog_throttle_509x455.png" alt="Thrustmaster Warthog Dual Throttle" class="vmap-throttle-img" id="vmap-img-throttle">
+                    <div class="vmap-overlay-layer" id="vmap-overlay-throttle">
+                      <div class="vmap-reticle" id="vmap-reticle-throttle">
+                        <div class="vmap-reticle-ring"></div>
+                        <div class="vmap-reticle-ping"></div>
+                        <div class="vmap-reticle-cross"></div>
+                        <div class="vmap-reticle-callout" id="vmap-callout-throttle">
+                          <span class="vmap-callout-badge amber" id="vmap-badge-throttle">BTN 21</span>
+                          <span class="vmap-callout-text" id="vmap-title-throttle">LDGH (Buzina / ATC)</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="vmap-showcase-caption">
+                    <span style="color: var(--mil-amber);">HOVER NA LISTA OU NA IMAGEM PARA APONTAR & EDITAR</span>
+                  </div>
+                </div>
+
+                <div id="vmap-throttle-buttons-container" class="vmap-scroll-list">
+                  <!-- Preenchido via app.js -->
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Hidden backward-compatibility elements -->
+            <div id="full-stick-catalog" style="display: none;"></div>
+            <div id="full-throttle-catalog" style="display: none;"></div>
+
+          </div>
+        </div>
+
+        <!-- TAB 4: KEYBINDS MATRIX / EDITOR -->
+    <div id="tab-matrix" class="tab-content">
+      <div class="glass-panel hud-brackets" style="padding: 18px; flex: 1; display: flex; flex-direction: column; gap: 14px; overflow: hidden;">
+        
+        <!-- Header & Action Controls -->
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap;">
+          <div>
+            <div class="deck-section-title" style="margin: 0; font-size: 14px;">⌨️ Editor de Teclas & Mapeamentos (DirectInput ➔ Star Citizen)</div>
+            <p style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">
+              Edita e personaliza qualquer tecla injetada no teclado pelo HOTAS Warthog. As alterações têm efeito imediato e são salvas no perfil ativo:
+              <strong id="matrix-active-profile-tag" style="color: var(--neon-cyan); background: rgba(0,210,255,0.1); padding: 2px 8px; border-radius: 4px; border: 1px solid rgba(0,210,255,0.25);">⚔️ Combate / Dogfight</strong>
+            </p>
+          </div>
+          <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+            <button class="btn-glow" style="padding: 6px 14px; font-size: 12px;" onclick="saveAllCurrentMappings()">💾 Guardar Todas</button>
+            <button class="btn-secondary" style="padding: 6px 12px; font-size: 12px; color: var(--neon-amber); border-color: rgba(255,170,0,0.4);" onclick="resetActiveProfileMappings()" title="Restaura os mapeamentos de fábrica para este perfil">🔄 Restaurar Padrão</button>
+          </div>
+        </div>
+
+        <!-- Filter & Search Bar -->
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; background: rgba(0,0,0,0.3); padding: 10px 14px; border-radius: 6px; border: 1px solid rgba(0,210,255,0.15);">
+          <div style="display: flex; align-items: center; gap: 10px; flex: 1; min-width: 260px;">
+            <input type="text" id="matrix-search" class="matrix-search-input" style="width: 100%; max-width: 420px;" placeholder="🔍 Filtrar por tecla, ação, botão ou descrição (ex: 'APU', 'N', 'VTOL', 'Armas')..." oninput="filterMatrixTable(this.value)">
+            <span id="matrix-count-badge" style="font-size: 11px; font-family: var(--font-mono); color: var(--neon-cyan); white-space: nowrap;">0 ações</span>
+          </div>
+
+          <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+            <span style="font-size: 11px; color: var(--text-dim); text-transform: uppercase;">Filtrar:</span>
+            <button class="btn-secondary matrix-cat-btn active" style="padding: 4px 10px; font-size: 11px;" onclick="setMatrixCategoryFilter('all', this)">Todos</button>
+            <button class="btn-secondary matrix-cat-btn" style="padding: 4px 10px; font-size: 11px;" onclick="setMatrixCategoryFilter('throttle_base', this)">Base Manete</button>
+            <button class="btn-secondary matrix-cat-btn" style="padding: 4px 10px; font-size: 11px;" onclick="setMatrixCategoryFilter('throttle_grips', this)">Punhos Manete</button>
+            <button class="btn-secondary matrix-cat-btn" style="padding: 4px 10px; font-size: 11px;" onclick="setMatrixCategoryFilter('stick', this)">Manche A-10C</button>
+            <button class="btn-secondary matrix-cat-btn" style="padding: 4px 10px; font-size: 11px;" onclick="setMatrixCategoryFilter('shift', this)">Camada Shift S4</button>
+          </div>
+        </div>
+
+        <!-- Table Viewport -->
+        <div style="overflow-y: auto; flex: 1; border: 1px solid rgba(0, 210, 255, 0.12); border-radius: 4px; background: rgba(0,0,0,0.25);">
+          <table style="width: 100%; border-collapse: collapse; font-family: var(--font-mono); font-size: 12px;">
+            <thead>
+              <tr style="border-bottom: 1.5px solid rgba(0, 210, 255, 0.3); text-align: left; color: var(--neon-cyan); background: rgba(6, 12, 22, 0.85); position: sticky; top: 0; z-index: 2;">
+                <th style="padding: 10px 12px;">AÇÃO / GATILHO (ID)</th>
+                <th style="padding: 10px 12px;">FUNÇÃO NO STAR CITIZEN</th>
+                <th style="padding: 10px 12px;">TECLA INJETADA</th>
+                <th style="padding: 10px 12px;">MODIFICADOR</th>
+                <th style="padding: 10px 12px;">DURAÇÃO</th>
+                <th style="padding: 10px 12px; text-align: right;">OPÇÕES</th>
+              </tr>
+            </thead>
+            <tbody id="matrix-tbody">
+              <!-- Preenchido dinamicamente via JS -->
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+    </div>
+
+    
+
+        <!-- TAB 5: AXES, CURVES & SLEW -->
+    <div id="tab-axes" class="tab-content">
+      <div style="max-width: 900px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; gap: 16px;">
+        
+        <!-- Axis Response Curve Visualizer -->
+        <div class="glass-panel hud-brackets" style="padding: 20px;">
+          <div class="deck-section-title">Curvas de Resposta de Voo (S-Curves / Exponencial)</div>
+          <p style="font-size: 13px; color: var(--text-secondary); margin: 6px 0 16px 0;">
+            Compensa a mola central do manche Warthog para mira precisa em dogfight, mantendo os propulsores da manete lineares (1.0) sem zonas mortas artificiais.
+          </p>
+
+          <div style="display: grid; grid-template-columns: 240px 1fr; gap: 24px; align-items: center;">
+            <div>
+              <div style="margin-bottom: 14px;">
+                <label style="font-size: 11px; color: var(--text-dim); text-transform: uppercase;">Tipo de Curva:</label>
+                <select id="select-curve-type" onchange="changeCurveType(this.value)" style="width: 100%; background: #060b14; border: 1px solid rgba(0,210,255,0.3); color: #fff; padding: 6px 10px; border-radius: 4px; font-family: var(--font-hud); font-size: 13px; margin-top: 4px;">
+                  <option value="expo">Curva Exponencial (Expo Dogfight)</option>
+                  <option value="s_curve">Curva-S Sigmoide (Suave no Centro)</option>
+                  <option value="linear">Linear (Padrão 1:1)</option>
+                </select>
+              </div>
+
+              <div>
+                <label style="font-size: 11px; color: var(--text-dim); text-transform: uppercase;">Expoente de Sensibilidade:</label>
+                <div style="display: flex; align-items: center; gap: 10px; margin-top: 4px;">
+                  <input type="range" id="slider-exponent" min="10" max="30" value="18" oninput="changeCurveExponent(this.value / 10)">
+                  <span id="label-exponent" style="font-size: 14px; font-weight: bold; color: var(--neon-cyan); min-width: 30px;">1.8</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Curve Canvas Graph -->
+            <div style="display: flex; flex-direction: column; align-items: center;">
+              <canvas id="curve-canvas" width="360" height="180" style="background: rgba(0,0,0,0.5); border: 1px solid rgba(0,210,255,0.25); border-radius: 4px; box-shadow: inset 0 0 15px rgba(0,210,255,0.05);"></canvas>
+              <div style="font-size: 11px; color: var(--text-dim); margin-top: 6px;">Gráfico de Resposta: Entrada Física (X) vs Deflexão no Jogo (Y)</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Slew Deadzone -->
+        <div class="glass-panel hud-brackets" style="padding: 20px;">
+          <div class="deck-section-title">Zona Morta (Deadzone) do Mini-Stick Slew da Manete</div>
+          <div style="display: flex; align-items: center; gap: 16px; margin-top: 8px;">
+            <input type="range" id="slider-deadzone" min="2" max="30" value="12" oninput="updateDeadzone(this.value)">
+            <span id="label-deadzone" style="font-size: 18px; font-weight: bold; color: var(--neon-cyan); min-width: 50px;">12%</span>
+          </div>
+        </div>
+
+        <!-- Virtual Yaw -->
+        <div class="glass-panel hud-brackets" style="padding: 20px;">
+          <div class="deck-section-title">Controlo de Leme (Yaw) no Mini-Stick Slew (Pilotos sem Pedais)</div>
+          <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 14px; font-weight: bold; margin-top: 8px;">
+            <input type="checkbox" id="chk-yaw-assist" checked onchange="updateYawAssist(this.checked)" style="width: 18px; height: 18px; accent-color: var(--neon-cyan);">
+            Eixo Slew Horizontal (js2_x) mapeado para Leme (v_yaw) e Vertical (js2_y) para Strafe Vertical
+          </label>
+        </div>
+
+      </div>
+    </div>
+
+  
+
+        <!-- TAB 3: AUTO-DOCTOR (REPARAÇÃO DE THRUSTERS & ACTIONMAPS.XML) -->
+    <div id="tab-doctor" class="tab-content">
+      <div class="doctor-container">
+        
+        <div id="doctor-banner" class="glass-panel health-banner hud-brackets healthy">
+          <div>
+            <h2 id="doctor-title" style="font-size: 18px; letter-spacing: 1.5px; text-transform: uppercase;">A analisar ActionMaps do Star Citizen...</h2>
+            <p id="doctor-desc" style="font-size: 13px; color: var(--text-secondary); margin-top: 4px;">A verificar conflitos de Thrusters (js2_rotz vs Speed Limiter), curvas e alinhamento js1/js2.</p>
+          </div>
+          <button class="btn-glow" onclick="fixActionMaps()">⚡ Reparar Thrusters & Aplicar Mapeamento Total</button>
+        </div>
+
+        <div class="diag-devices-row">
+          <div class="glass-panel device-card hud-brackets">
+            <div class="inst-id">Instância 01 (js1) no Star Citizen:</div>
+            <div class="prod-name" id="diag-js1-name">A carregar...</div>
+            <div style="font-size: 12px; color: var(--neon-cyan);">Alvo: Joystick - HOTAS Warthog (PID 0402 • Roll & Pitch)</div>
+          </div>
+          <div class="glass-panel device-card hud-brackets">
+            <div class="inst-id">Instância 02 (js2) no Star Citizen:</div>
+            <div class="prod-name" id="diag-js2-name">A carregar...</div>
+            <div style="font-size: 12px; color: var(--neon-cyan);">Alvo: Throttle - HOTAS Warthog (PID 0404 • Thrusters Z/Rz & Slider1)</div>
+          </div>
+        </div>
+
+        <div class="glass-panel hud-brackets" style="padding: 14px;">
+          <div class="deck-section-title">Diagnóstico de Problemas Conhecidos do Warthog no Star Citizen</div>
+          <div id="anomalies-box" style="font-family: var(--font-mono); font-size: 12px; color: var(--neon-amber); margin: 8px 0; line-height: 1.6;">
+            A analisar...
+          </div>
+          <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.08); font-size: 12px; color: var(--text-secondary); line-height: 1.5;">
+            <strong style="color: var(--neon-cyan);">💡 Porque é que os Thrusters da Manete falhavam no Star Citizen?</strong><br>
+            1. Quando as duas manetes do Warthog estão unidas, movem em simultâneo os eixos <code>js2_z</code> (Esquerda) e <code>js2_rotz</code> (Direita Principal). No teu <code>actionmaps.xml</code>, <code>js2_rotz</code> estava ligado a <code>v_ifcs_speed_limiter_rel</code> (Limitador de Velocidade) com expoente <code>2.90</code>, travando a nave a 0 m/s!<br>
+            2. Puxar as manetes para o detentor físico traseiro <strong>OFF (Idle Cutoff)</strong> mantém premidos continuamente os botões <strong>DX 29 e DX 30</strong>, bloqueando a deteção de eixos no menu do jogo.<br>
+            3. A reparação automática liberta <code>js2_rotz</code> para os propulsores, move o Limitador de Velocidade para a roda cinzenta central (<code>js2_slider1</code>) e mapeia todos os 51 botões!
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 12px; justify-content: space-between; align-items: center;">
+          <div style="font-family: var(--font-mono); font-size: 11px; color: var(--neon-cyan); background: rgba(0,210,255,0.08); padding: 8px 12px; border-radius: 4px; border: 1px solid rgba(0,210,255,0.25);">
+            Consola do Star Citizen (tecla ~): <strong>pp_rebindkeys layout_warthog_sc_fixed</strong>
+          </div>
+          <div style="display: flex; gap: 10px;">
+            <button class="btn-secondary" onclick="installProfile()">📥 Gerar / Instalar layout_warthog_sc_fixed.xml</button>
+            <button class="btn-secondary" onclick="createBackup()">💾 Criar Backup Manual</button>
+            <button class="btn-secondary" onclick="requestDiagnosis()">🔄 Re-analisar</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    
+
+      
+        <!-- TAB 6: MACROS MULTI-PASSO & COMPUTADOR DE BORDO AI (VOZ) -->
+        <div id="tab-macros" class="tab-content">
+          <div style="display: grid; grid-template-columns: 1.25fr 0.75fr; gap: 16px; flex: 1; min-height: 0; overflow: hidden;">
+
+            <!-- COLUNA ESQUERDA: EDITOR DE MACROS -->
+            <div class="glass-panel hud-brackets" style="padding: 16px; display: flex; flex-direction: column; gap: 12px; min-height: 0; overflow: hidden;">
+              <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap;">
+                <div>
+                  <div class="deck-section-title" style="margin: 0;">⚡ Estúdio de Macros & Sequências Automáticas</div>
+                  <p style="font-size: 12px; color: var(--text-secondary); margin-top: 2px;">
+                    Cria sequências multi-passo e associa-as a qualquer botão (Toque Curto ou Pressão Longa) no Editor de Teclas.
+                  </p>
+                </div>
+                <button class="btn-glow" style="padding: 6px 14px; font-size: 11px;" onclick="createNewMacro()">+ Nova Macro</button>
+              </div>
+
+              <!-- Lista de Macros Guardadas -->
+              <div id="macros-list-container" style="display: flex; flex-direction: column; gap: 7px; max-height: 210px; overflow-y: auto; padding-right: 4px;">
+                <!-- Preenchido via app.js -->
+              </div>
+
+              <!-- Construtor Visual de Passos -->
+              <div id="macro-editor-box" style="flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 10px; padding-top: 10px; border-top: 1px solid rgba(72,220,255,0.18); overflow: hidden;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <span style="font-family: var(--font-mono); font-size: 11px; color: var(--mil-amber); letter-spacing: 1px;">EDITOR DE SEQUÊNCIA:</span>
+                  <span id="macro-editing-id" style="font-family: var(--font-mono); font-size: 10.5px; color: var(--text-dim);">Nova Macro</span>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 70px 1fr; gap: 8px;">
+                  <input type="text" id="macro-input-icon" class="form-input" value="⚡" style="text-align: center; font-size: 15px;" title="Ícone">
+                  <input type="text" id="macro-input-name" class="form-input" placeholder="Nome da Macro (ex: Aterragem Completa)">
+                </div>
+
+                <div id="macro-steps-container" style="flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; padding-right: 4px;">
+                  <!-- Passos da Macro -->
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; padding-top: 8px; border-top: 1px solid rgba(72,220,255,0.12);">
+                  <button class="btn-secondary" onclick="addMacroStep()">+ Adicionar Passo</button>
+                  <div style="display: flex; gap: 8px;">
+                    <button class="btn-secondary" onclick="testCurrentEditorMacro()">▶ Testar Sequência</button>
+                    <button class="btn-glow" style="padding: 6px 14px;" onclick="saveCurrentMacro()">💾 Guardar Macro</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- COLUNA DIREITA: COMPUTADOR DE BORDO POR VOZ (SHIP AI VOICE) -->
+            <div class="glass-panel hud-brackets" style="padding: 16px; display: flex; flex-direction: column; gap: 14px; overflow-y: auto;">
+              <div>
+                <div class="deck-section-title" style="margin: 0;">🔊 Computador de Bordo (Ship AI Voice)</div>
+                <p style="font-size: 12px; color: var(--text-secondary); margin-top: 3px;">
+                  Avisos de voz estilo <strong>Aegis / Anvil Combat Computer</strong> quando acionas interruptores, perfis ou macros no HOTAS.
+                </p>
+              </div>
+
+              <label style="display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; background: rgba(6,12,20,0.72); border: 1px solid rgba(72,220,255,0.22); cursor: pointer;">
+                <span style="font-weight: 700; font-size: 13px; color: #fff;">Ativar Voz do Computador de Bordo</span>
+                <input type="checkbox" id="chk-voice-enabled" checked onchange="onVoiceSettingChanged()" style="width: 18px; height: 18px; accent-color: var(--sc-cyan);">
+              </label>
+
+              <div class="form-group">
+                <label>Idioma & Estilo de Aviónica:</label>
+                <select id="select-voice-lang" class="form-input" onchange="onVoiceSettingChanged()">
+                  <option value="en">🇺🇸 Inglês Aviónica (Aegis / Anvil — "Landing Gear Deployed")</option>
+                  <option value="pt">🇵🇹 Português Tático ("Trem de Aterragem Ativado")</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label>Volume: <span id="lbl-voice-vol" style="color:#fff;">85%</span></label>
+                <input type="range" id="slider-voice-volume" min="10" max="100" value="85" oninput="onVoiceSettingChanged()">
+              </div>
+
+              <div class="form-group">
+                <label>Velocidade da Fala: <span id="lbl-voice-rate" style="color:#fff;">1.05x</span></label>
+                <input type="range" id="slider-voice-rate" min="70" max="150" value="105" oninput="onVoiceSettingChanged()">
+              </div>
+
+              <div class="form-group">
+                <label>Tom / Pitch (Mais Grave = Mais Robótico): <span id="lbl-voice-pitch" style="color:#fff;">0.85</span></label>
+                <input type="range" id="slider-voice-pitch" min="50" max="140" value="85" oninput="onVoiceSettingChanged()">
+              </div>
+
+              <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                <button class="btn-secondary" style="flex: 1;" onclick="testShipVoice('APU_ON')">🔊 Flight Ready</button>
+                <button class="btn-secondary" style="flex: 1;" onclick="testShipVoice('RDR_ALTM_OFF')">🔊 Landing Gear</button>
+                <button class="btn-secondary" style="flex: 1;" onclick="testShipVoice('FLAPS_DN')">🔊 VTOL</button>
+              </div>
+
+              <div style="background: rgba(5,10,16,0.7); border: 1px solid rgba(72,220,255,0.14); padding: 10px 12px; font-family: var(--font-mono); font-size: 11px; color: var(--text-secondary); line-height: 1.6;">
+                <div style="color: var(--mil-amber); margin-bottom: 4px; font-weight: 700;">EVENTOS ANUNCIADOS AUTOMATICAMENTE:</div>
+                • Mudança de Perfil (Combate / Mineração / Carga / Terrestre)<br>
+                • Trem de Aterragem (RDR ALTM) & Modo VTOL (Flaps)<br>
+                • Master Modes (SCM / NAV / Quantum) & Flight Ready (APU)<br>
+                • Faróis (Pinky), Torre ATC (LDGH), Shift Layer & Macros
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- ================= KEYBIND CAPTURE & EDIT MODAL ================= -->
+  <div id="key-editor-modal" class="modal-overlay">
+    <div class="modal-window hud-brackets">
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 20px;">⌨️</span>
+          <div>
+            <div class="modal-title">Editar Tecla do HOTAS</div>
+            <div id="modal-action-id" style="font-family: var(--font-mono); font-size: 12px; color: var(--neon-cyan);">ACTION_ID</div>
+          </div>
+        </div>
+        <button class="modal-close-btn" onclick="closeKeyEditorModal()" title="Fechar (ESC)">&times;</button>
+      </div>
+
+      <!-- Action Description -->
+      <div class="form-group">
+        <label>Descrição / Função:</label>
+        <input type="text" id="modal-input-desc" class="matrix-search-input" placeholder="Ex: Flight Ready - Ligar Tudo">
+      </div>
+
+      <!-- Interactive Key & Mouse Listener Box -->
+      <div class="form-group">
+        <label>Captura Interativa (Teclado, Botões do Rato ou Roda):</label>
+        <div id="modal-key-listener-box" class="key-listener-box" onclick="startKeyCapture()" oncontextmenu="return false;">
+          <span id="modal-listener-status" style="font-size: 11px; color: var(--neon-cyan); text-transform: uppercase; letter-spacing: 1px;">
+            🖱️ Clica aqui para capturar tecla ou botão do rato
+          </span>
+          <div id="modal-key-display" class="key-preview-display">NENHUMA (Nativo DirectInput)</div>
+          <span id="modal-listener-tip" style="font-size: 11px; color: var(--text-dim);">
+            Pressiona qualquer tecla, botão do rato (Esq/Dir/Meio/Lateral) ou roda, ou usa os atalhos abaixo
+          </span>
+        </div>
+      </div>
+
+      <!-- Quick-Pick Mouse Buttons -->
+      <div class="form-group">
+        <label>Atalhos Rápidos — Botões do Rato:</label>
+        <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+          <button type="button" class="btn-secondary" style="padding: 4px 8px; font-size: 11px;" onclick="selectMouseKey('MOUSE1')">🖱️ Esq (MOUSE1)</button>
+          <button type="button" class="btn-secondary" style="padding: 4px 8px; font-size: 11px;" onclick="selectMouseKey('MOUSE2')">🖱️ Dir (MOUSE2)</button>
+          <button type="button" class="btn-secondary" style="padding: 4px 8px; font-size: 11px;" onclick="selectMouseKey('MOUSE3')">🖱️ Meio (MOUSE3)</button>
+          <button type="button" class="btn-secondary" style="padding: 4px 8px; font-size: 11px;" onclick="selectMouseKey('MOUSE4')">🖱️ Lat 1 (MOUSE4)</button>
+          <button type="button" class="btn-secondary" style="padding: 4px 8px; font-size: 11px;" onclick="selectMouseKey('MOUSE5')">🖱️ Lat 2 (MOUSE5)</button>
+          <button type="button" class="btn-secondary" style="padding: 4px 8px; font-size: 11px;" onclick="selectMouseKey('MWHEEL_UP')">🖱️ Roda ▲</button>
+          <button type="button" class="btn-secondary" style="padding: 4px 8px; font-size: 11px;" onclick="selectMouseKey('MWHEEL_DOWN')">🖱️ Roda ▼</button>
+        </div>
+      </div>
+
+      <!-- Manual Overrides -->
+      <div class="form-row">
+        <div class="form-group">
+          <label>Tecla Principal:</label>
+          <input type="text" id="modal-input-key" class="matrix-search-input" placeholder="Ex: R, SPACE, MOUSE1, MOUSE2, MWHEEL_UP" oninput="updateModalPreview()">
+        </div>
+        <div class="form-group">
+          <label>Duração do Pulso:</label>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <input type="range" id="modal-slider-hold" min="20" max="400" step="10" value="60" oninput="updateHoldDurationDisplay(this.value)">
+            <span id="modal-hold-display" style="font-family: var(--font-mono); font-size: 13px; color: var(--neon-cyan); min-width: 50px;">60ms</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modifiers -->
+      <div class="form-group">
+        <label>Teclas Modificadoras Adicionais:</label>
+        <div class="checkbox-chips">
+          <label class="checkbox-chip">
+            <input type="checkbox" id="modal-chk-alt" onchange="updateModalPreview()">
+            <span>ALT</span>
+          </label>
+          <label class="checkbox-chip">
+            <input type="checkbox" id="modal-chk-ctrl" onchange="updateModalPreview()">
+            <span>CTRL</span>
+          </label>
+          <label class="checkbox-chip">
+            <input type="checkbox" id="modal-chk-shift" onchange="updateModalPreview()">
+            <span>SHIFT</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Macro Binding for Short/Normal Press -->
+      <div class="form-group">
+        <label>⚡ Ou Executar Macro (em vez de tecla simples):</label>
+        <select id="modal-select-macro" class="form-input" onchange="updateModalPreview()">
+          <option value="">— Nenhuma Macro (Usar Tecla/Rato acima) —</option>
+        </select>
+      </div>
+
+      <!-- Dual-Action: Long Press / Hold Configuration -->
+      <div style="background: rgba(240, 164, 38, 0.07); border: 1px solid rgba(240, 164, 38, 0.30); padding: 10px 12px; display: flex; flex-direction: column; gap: 8px;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-family: var(--font-mono); font-size: 11px; font-weight: 700; color: var(--mil-amber); letter-spacing: 0.8px;">
+            ⏱️ AÇÃO DUPLA — PRESSÃO LONGA / HOLD (OPCIONAL)
+          </span>
+          <span id="modal-long-threshold-display" style="font-family: var(--font-mono); font-size: 11px; color: var(--sc-cyan);">450ms</span>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 10.5px; color: var(--text-secondary); white-space: nowrap;">Tempo p/ Hold:</span>
+          <input type="range" id="modal-slider-long-threshold" min="250" max="1200" step="50" value="450" style="flex: 1;" oninput="document.getElementById('modal-long-threshold-display').textContent = this.value + 'ms'">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label style="color: var(--mil-amber);">Tecla / Rato (Hold):</label>
+            <input type="text" id="modal-input-long-key" class="matrix-search-input" placeholder="Ex: N, MOUSE2 (vazio = desativado)" oninput="updateModalPreview()">
+          </div>
+          <div class="form-group">
+            <label style="color: var(--mil-amber);">Ou Macro (Hold):</label>
+            <select id="modal-select-long-macro" class="form-input" onchange="updateModalPreview()">
+              <option value="">— Nenhuma Macro —</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="checkbox-chips">
+          <label class="checkbox-chip" style="padding: 4px 9px; font-size: 11px;">
+            <input type="checkbox" id="modal-chk-long-alt" onchange="updateModalPreview()">
+            <span>ALT</span>
+          </label>
+          <label class="checkbox-chip" style="padding: 4px 9px; font-size: 11px;">
+            <input type="checkbox" id="modal-chk-long-ctrl" onchange="updateModalPreview()">
+            <span>CTRL</span>
+          </label>
+          <label class="checkbox-chip" style="padding: 4px 9px; font-size: 11px;">
+            <input type="checkbox" id="modal-chk-long-shift" onchange="updateModalPreview()">
+            <span>SHIFT</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px; padding-top: 14px; border-top: 1px solid rgba(255, 255, 255, 0.08); gap: 10px; flex-wrap: wrap;">
+        <button class="btn-secondary" style="border-color: rgba(255, 51, 85, 0.4); color: var(--neon-red);" onclick="clearCurrentModalKey()">❌ Limpar Tecla (Nativo)</button>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn-secondary" onclick="testModalKey()">⚡ Testar Pulso</button>
+          <button class="btn-glow" style="padding: 8px 18px;" onclick="saveModalKey()">💾 Guardar Tecla</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  
+
+  <script src="app.js?v=5.4.2"></script>
+</body>
+</html>

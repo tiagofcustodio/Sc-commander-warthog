@@ -1,0 +1,66 @@
+=== STICK BUTTONS ===
+BTN 01: TG1 (Gatilho Etapa 1) -> v_attack1_group1
+BTN 02: S2 (Weapon Release) -> v_weapon_toggle_launch_missile
+BTN 03: S3 (Nosewheel Steering) -> v_weapon_cycle_aimmode
+BTN 04: S4 (Pinky Lever) -> v_ifcs_toggle_vector_decoupling
+BTN 05: S1 (Master Mode Btn) -> v_toggle_quantum_mode
+BTN 06: TG2 (Gatilho Etapa 2) -> v_attack1_group2
+BTN 07: TMS UP (H2U) -> v_target_cycle_in_view_reset
+BTN 08: TMS RIGHT (H2R) -> v_target_cycle_hostile_fwd
+BTN 09: TMS DOWN (H2D) -> v_target_cycle_hostile_reset
+BTN 10: TMS LEFT (H2L) -> v_target_cycle_hostile_back
+BTN 11: DMS UP (H3U) -> v_invoke_ping
+BTN 12: DMS RIGHT (H3R) -> v_target_cycle_all_fwd
+BTN 13: DMS DOWN (H3D) -> v_dec_scan_focus_level
+BTN 14: DMS LEFT (H3L) -> v_target_cycle_all_back
+BTN 15: CMS UP (H4U) -> v_weapon_countermeasure_noise_launch
+BTN 16: CMS RIGHT (H4R) -> v_weapon_countermeasure_decoy_burst_increase
+BTN 17: CMS DOWN (H4D) -> v_weapon_countermeasure_decoy_launch
+BTN 18: CMS LEFT (H4L) -> v_weapon_countermeasure_decoy_burst_decrease
+BTN 19: CMS PUSH (H4P) -> v_weapon_countermeasure_decoy_launch_panic
+
+=== STICK HATS ===
+js1_hat1_up: TRIM HAT UP (H1U) -> v_capacitor_assignment_engine_combined_increase_max
+js1_hat1_right: TRIM HAT RIGHT (H1R) -> v_capacitor_assignment_shield_combined_increase_max
+js1_hat1_left: TRIM HAT LEFT (H1L) -> v_capacitor_assignment_weapon_combined_increase_max
+js1_hat1_down: TRIM HAT DOWN (H1D) -> v_capacitor_assignment_reset
+
+=== THROTTLE BUTTONS ===
+BTN 01: SC (Slew Push) -> v_target_match_vel
+BTN 02: MSP (Mic Push) -> foip_pushtotalk
+BTN 03: MSU (Mic Up) -> v_toggle_scan_mode
+BTN 04: MSR (Mic Right) -> v_view_cycle_fwd
+BTN 05: MSD (Mic Down) -> v_toggle_mining_mode
+BTN 06: MSL (Mic Left) -> 
+BTN 07: SPDF (Speedbrake FWD) -> v_ifcs_toggle_cruise_control
+BTN 08: SPDB (Speedbrake AFT) -> v_space_brake
+BTN 09: BSF (Boat FWD) -> v_toggle_qdrive_engagement
+BTN 10: BSB (Boat AFT) -> v_toggle_guns_mode
+BTN 11: CHF (China Hat FWD) -> v_afterburner
+BTN 12: CHB (China Hat AFT) -> v_strafe_back
+BTN 13: PSF (Pinky FWD) -> v_lights
+BTN 14: PSB (Pinky AFT) -> v_toggle_cabin_lights
+BTN 15: LTB (Left Throttle Btn) -> v_flightready
+BTN 16: EFLNORM (Fuel Left) -> v_power_toggle_thrusters
+BTN 17: EFRNORM (Fuel Right) -> v_power_toggle_weapons
+BTN 18: EOLMOTOR (Eng L Motor) -> v_power_set_thrusters_off
+BTN 19: EORMOTOR (Eng R Motor) -> v_power_set_weapons_off
+BTN 20: APUON (APU Start) -> v_flightready
+BTN 21: LDGH (Horn / ATC) -> v_atc_request
+BTN 22: FLAPU (Flaps UP) -> v_ifcs_toggle_cruise_control
+BTN 23: FLAPD (Flaps DOWN) -> v_toggle_vtol
+BTN 24: EACON (EAC ARM) -> v_power_toggle
+BTN 25: RDRNRM (RDR ALTM) -> v_toggle_landing_system
+BTN 26: APENG (Autopilot Btn) -> v_atc_request
+BTN 27: APPAT (AP PATH) -> v_open_all_doors
+BTN 28: APALT (AP ALT) -> v_lock_all_doors
+BTN 29: IDLEROFF (Cutoff Dir.) -> SAFE_IDLE_R
+BTN 30: IDLELOFF (Cutoff Esq.) -> SAFE_IDLE_L
+BTN 31: EOLIGN (Eng L IGN) -> visor_wipe
+BTN 32: EORIGN (Eng R IGN) -> v_eject
+
+=== THROTTLE HATS ===
+js2_hat1_up: COOLIE HAT UP (CSU) -> v_strafe_up
+js2_hat1_down: COOLIE HAT DOWN (CSD) -> v_strafe_down
+js2_hat1_left: COOLIE HAT LEFT (CSL) -> v_yaw_left
+js2_hat1_right: COOLIE HAT RIGHT (CSR) -> v_yaw_right
