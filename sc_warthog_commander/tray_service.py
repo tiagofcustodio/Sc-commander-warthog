@@ -222,7 +222,19 @@ class WarthogTrayIcon:
         )
         win32gui.UpdateWindow(self.hwnd)
 
-        hicon = win32gui.LoadIcon(0, win32con.IDI_APPLICATION)
+        # Carrega o ícone personalizado Star Citizen + HOTAS (.ico) com fallback seguro
+        ico_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "web", "app_icon.ico")
+        hicon = None
+        if os.path.exists(ico_path):
+            try:
+                hicon = win32gui.LoadImage(
+                    0, ico_path, win32con.IMAGE_ICON, 0, 0,
+                    win32con.LR_LOADFROMFILE | win32con.LR_DEFAULTSIZE
+                )
+            except Exception:
+                hicon = None
+        if not hicon:
+            hicon = win32gui.LoadIcon(0, win32con.IDI_APPLICATION)
         flags = win32gui.NIF_ICON | win32gui.NIF_MESSAGE | win32gui.NIF_TIP
         nid = (self.hwnd, 0, flags, win32con.WM_USER + 20, hicon, "Warthog SC Commander PRO (Clique para abrir)")
         win32gui.Shell_NotifyIcon(win32gui.NIM_ADD, nid)

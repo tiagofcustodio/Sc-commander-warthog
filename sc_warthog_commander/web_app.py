@@ -81,6 +81,14 @@ async def get_js():
     return FileResponse(os.path.join(WEB_DIR, "app.js"), headers={"Cache-Control": "no-store"})
 
 
+@app.get("/favicon.ico")
+async def get_favicon():
+    ico_path = os.path.join(WEB_DIR, "app_icon.ico")
+    if os.path.exists(ico_path):
+        return FileResponse(ico_path, media_type="image/x-icon")
+    return FileResponse(os.path.join(WEB_DIR, "app_icon.png"), media_type="image/png")
+
+
 @app.get("/{filename}.png")
 async def get_png(filename: str):
     file_path = os.path.join(WEB_DIR, f"{filename}.png")
