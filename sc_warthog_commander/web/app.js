@@ -3185,14 +3185,20 @@ function makeTacticalSvgUri(title, subtitle, accentColor, isThrottle) {
 
 function getStickImageForKit(kitId) {
   if (kitId === 'warthog') return '/warthog_stick_526x1181.png';
+  if (kitId === 'tm_t16000m' || kitId === 'tm_t16000m_hosas' || kitId === 'tm_t16000m_single') return '/t16000m_stick.png';
   if (kitId === 'saitek_x56') return makeTacticalSvgUri('SAITEK / LOGITECH X56 STICK', '17B • C-STICK • TWIST YAW • RGB', '#48dcff', false);
-  if (kitId === 'tm_t16000m') return makeTacticalSvgUri('THRUSTMASTER T.16000M FCS', '16B • H.E.A.R.T • TWIST YAW', '#48dcff', false);
   if (kitId === 'tm_tca') return makeTacticalSvgUri('THRUSTMASTER TCA SIDESTICK', '17B • AIRBUS EDITION • TWIST', '#48dcff', false);
   if (kitId === 'tm_tflight') return makeTacticalSvgUri('THRUSTMASTER T.FLIGHT STICK', '12B • R1/L1/R3 • TWIST YAW', '#48dcff', false);
   return '/warthog_stick_526x1181.png';
 }
 
-function getThrottleImageForKit(kitId) {
+function getThrottleImageForKit(kitId, leftRole = 'throttle') {
+  // HOSAS (2 Joysticks — Left Hand Stick)
+  if (leftRole === 'stick' || kitId === 'tm_t16000m_hosas') {
+    if (kitId && kitId.startsWith('tm_t16000m')) return '/t16000m_stick_left.png';
+    return getStickImageForKit(kitId);
+  }
+  // HOTAS (Throttle Lever)
   if (kitId === 'warthog') return '/warthog_throttle_509x455.png';
   if (kitId === 'saitek_x56') return makeTacticalSvgUri('SAITEK / LOGITECH X56 THROTTLE', '32B • 7 TOGGLES • 4 ROTATIVOS • M1/M2/S1', '#f0a426', true);
   if (kitId === 'tm_t16000m') return makeTacticalSvgUri('THRUSTMASTER TWCS THROTTLE', '14B • S.M.A.R.T RAIL • PADDLE', '#f0a426', true);
@@ -3205,24 +3211,34 @@ function applyHotasInfo(data) {
   if (data.kits) cachedHotasKits = data.kits;
   if (data.detected_devices) cachedDetectedUsb = data.detected_devices;
 
-  // Auto-switch visual map images to match physically connected Stick & Throttle (including mixed setups!)
   let stickKit = data.selected_kit || activeHotasKit || 'warthog';
   let throttleKit = stickKit;
+  let leftRole = data.left_device_role || (cachedHotasKits[stickKit]?.left_role) || 'throttle';
 
   if (data.auto_switch && (data.detected_stick_kit || data.detected_throttle_kit || data.detected_kit)) {
     activeHotasKit = data.detected_kit || data.detected_stick_kit || data.detected_throttle_kit || activeHotasKit;
     stickKit = data.detected_stick_kit || activeHotasKit;
     throttleKit = data.detected_throttle_kit || activeHotasKit;
+
+    // Auto-adapt single-device vs dual-device view according to what is physically connected!
+    if (data.stick_connected && !data.throttle_connected) {
+      setVisualMapView('stick');
+    } else if (!data.stick_connected && data.throttle_connected) {
+      setVisualMapView('throttle');
+    } else if (data.stick_connected && data.throttle_connected) {
+      setVisualMapView('both');
+    }
   } else if (data.selected_kit) {
     activeHotasKit = data.selected_kit;
     stickKit = activeHotasKit;
     throttleKit = activeHotasKit;
+    if (activeHotasKit === 'tm_t16000m_single') setVisualMapView('stick');
   }
 
   const sel = document.getElementById('vmap-kit-selector');
   if (sel && cachedHotasKits[activeHotasKit]) sel.value = activeHotasKit;
 
-  updateVisualKitGraphics(stickKit, throttleKit, !!data.detected_stick_kit, !!data.detected_throttle_kit);
+  updateVisualKitGraphics(stickKit, throttleKit, !!data.detected_stick_kit, !!data.detected_throttle_kit, leftRole);
   renderHotasKitsGrid();
   renderDetectedUsbList();
 }
@@ -3232,7 +3248,14 @@ function selectHotasKit(kitId) {
   const sel = document.getElementById('vmap-kit-selector');
   if (sel) sel.value = activeHotasKit;
 
-  updateVisualKitGraphics(activeHotasKit, activeHotasKit, false, false);
+  const leftRole = (kitId === 'tm_t16000m_hosas') ? 'stick' : (kitId === 'tm_t16000m_single' ? 'none' : 'throttle');
+  if (kitId === 'tm_t16000m_single') {
+    setVisualMapView('stick');
+  } else {
+    setVisualMapView('both');
+  }
+
+  updateVisualKitGraphics(activeHotasKit, activeHotasKit, false, false, leftRole);
   renderHotasKitsGrid();
 
   if (ws && ws.readyState === WebSocket.OPEN) {
@@ -3241,7 +3264,7 @@ function selectHotasKit(kitId) {
   playCockpitSound('chirp');
 }
 
-function updateVisualKitGraphics(stickKitId, throttleKitId, stickAuto = false, throttleAuto = false) {
+function updateVisualKitGraphics(stickKitId, throttleKitId, stickAuto = false, throttleAuto = false, leftRole = 'throttle') {
   const sId = stickKitId || 'warthog';
   const tId = throttleKitId || sId;
   const sKit = cachedHotasKits[sId] || cachedHotasKits.warthog;
@@ -3254,13 +3277,18 @@ function updateVisualKitGraphics(stickKitId, throttleKitId, stickAuto = false, t
   const thrTag = document.getElementById('vmap-throttle-header-tag');
   const thrMode = document.getElementById('vmap-throttle-mode-tag');
 
-  if (stickTag) stickTag.textContent = (stickAuto ? '● AUTO: ' : '') + sKit.stick_label;
+  const isHosas = (leftRole === 'stick' || tId === 'tm_t16000m_hosas');
+  const rightLabel = isHosas ? (sKit.stick_label.includes('DIREITO') ? sKit.stick_label : `${sKit.stick_label} (MÃO DIR.)`) : sKit.stick_label;
+  const leftLabel = isHosas ? (tId === 'tm_t16000m_hosas' ? tKit.throttle_label : `${tKit.stick_label} (ESQ. / HOSAS)`) : tKit.throttle_label;
+  const leftSummary = isHosas ? (tId === 'tm_t16000m_hosas' ? tKit.throttle_summary : tKit.stick_summary) : tKit.throttle_summary;
+
+  if (stickTag) stickTag.textContent = (stickAuto ? '● AUTO: ' : '') + rightLabel;
   if (stickMode) stickMode.textContent = sKit.stick_summary;
-  if (thrTag) thrTag.textContent = (throttleAuto ? '● AUTO: ' : '') + tKit.throttle_label;
-  if (thrMode) thrMode.textContent = tKit.throttle_summary;
+  if (thrTag) thrTag.textContent = (throttleAuto ? '● AUTO: ' : '') + leftLabel;
+  if (thrMode) thrMode.textContent = leftSummary;
 
   if (stickImg) stickImg.src = getStickImageForKit(sId);
-  if (thrImg) thrImg.src = getThrottleImageForKit(tId);
+  if (thrImg) thrImg.src = getThrottleImageForKit(tId, leftRole);
 }
 
 function renderHotasKitsGrid() {

@@ -143,6 +143,7 @@ class WarthogDeviceWatcher:
         self.detected_kit: str = "warthog"
         self.detected_stick_kit: Optional[str] = None
         self.detected_throttle_kit: Optional[str] = None
+        self.left_device_role: str = "throttle"  # 'throttle' (HOTAS), 'stick' (HOSAS 2 Joysticks), ou 'none' (1 Stick)
         self.detected_devices: list[dict] = []
 
         # Estados de botões anteriores (bitmasks de 32 bits)
@@ -202,6 +203,7 @@ class WarthogDeviceWatcher:
         throttle_found = None
         stick_kit = None
         throttle_kit = None
+        left_role = "none"
 
         caps = JOYCAPSW()
         caps_size = ctypes.sizeof(JOYCAPSW)
@@ -243,18 +245,27 @@ class WarthogDeviceWatcher:
                 "model": matched["model"] if matched else oem_name,
             })
 
-            # 1. Identificação unificada Multi-HOTAS (Thrustmaster Warthog / T.16000M / TWCS / TCA / T.Flight / Viper + Saitek/Logitech X56 Rhino)
+            # 1. Identificação unificada Multi-HOTAS & HOSAS (Thrustmaster Warthog / Dual T.16000M / TWCS / TCA / T.Flight / Viper + Saitek/Logitech X56 Rhino)
             if matched:
                 if matched["role"] == "throttle" and throttle_found is None:
                     throttle_found = slot
                     self.throttle_name = matched["model"]
                     throttle_kit = matched["kit"]
+                    left_role = "throttle"
                     continue
-                elif matched["role"] == "stick" and stick_found is None:
-                    stick_found = slot
-                    self.stick_name = matched["model"]
-                    stick_kit = matched["kit"]
-                    continue
+                elif matched["role"] == "stick":
+                    if stick_found is None:
+                        stick_found = slot
+                        self.stick_name = matched["model"]
+                        stick_kit = matched["kit"]
+                        continue
+                    elif throttle_found is None:
+                        # 2º Joystick ligado simultaneamente -> Modo HOSAS (Dual Stick, ex: 2x T.16000M!)
+                        throttle_found = slot
+                        self.throttle_name = f"{matched['model']} (Esq. / HOSAS)"
+                        throttle_kit = matched["kit"]
+                        left_role = "stick"
+                        continue
 
             # 2. Identificação por PID ou nome OEM no Registo
             if pid == WARTHOG_THROTTLE_PID or "throttle" in pname_lower or "0404" in pname_lower:
@@ -292,7 +303,13 @@ class WarthogDeviceWatcher:
 
         self.detected_stick_kit = stick_kit
         self.detected_throttle_kit = throttle_kit
-        if stick_kit or throttle_kit:
+        self.left_device_role = left_role if throttle_found is not None else "none"
+
+        if stick_kit == "tm_t16000m" and throttle_kit == "tm_t16000m" and left_role == "stick":
+            self.detected_kit = "tm_t16000m_hosas"
+        elif stick_kit == "tm_t16000m" and throttle_found is None:
+            self.detected_kit = "tm_t16000m_single"
+        elif stick_kit or throttle_kit:
             self.detected_kit = stick_kit or throttle_kit
         self.detected_devices = connected_slots
         return stick_found, throttle_found

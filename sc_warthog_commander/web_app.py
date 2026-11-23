@@ -227,6 +227,9 @@ def _build_hotas_info_payload(auto_switch: bool = False) -> dict:
         "detected_kit": watcher.detected_kit if has_hw else None,
         "detected_stick_kit": watcher.detected_stick_kit,
         "detected_throttle_kit": watcher.detected_throttle_kit,
+        "left_device_role": watcher.left_device_role,
+        "stick_connected": watcher.stick_slot is not None,
+        "throttle_connected": watcher.throttle_slot is not None,
         "detected_devices": watcher.detected_devices,
         "auto_switch": bool(auto_switch and has_hw),
     }

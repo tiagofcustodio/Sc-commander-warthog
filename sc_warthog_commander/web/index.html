@@ -967,10 +967,12 @@
                   <span style="position: absolute; left: 8px; top: 7px; font-size: 11px; pointer-events: none; opacity: 0.6;">🔍</span>
                 </div>
 
-                <select id="vmap-kit-selector" class="form-input" style="height: 30px; padding: 3px 8px; font-size: 11px; color: var(--mil-amber); border-color: rgba(240,164,38,0.45);" onchange="selectHotasKit(this.value)" title="Selecionar Modelo HOTAS">
+                <select id="vmap-kit-selector" class="form-input" style="height: 30px; padding: 3px 8px; font-size: 11px; color: var(--mil-amber); border-color: rgba(240,164,38,0.45);" onchange="selectHotasKit(this.value)" title="Selecionar Modelo HOTAS / HOSAS">
                   <option value="warthog">🕹️ Thrustmaster Warthog (A-10C)</option>
+                  <option value="tm_t16000m_hosas">🕹️ Thrustmaster Dual T.16000M (HOSAS — 2 Joysticks)</option>
+                  <option value="tm_t16000m">🕹️ Thrustmaster T.16000M + TWCS (HOTAS)</option>
+                  <option value="tm_t16000m_single">🕹️ Thrustmaster T.16000M (1 Joystick)</option>
                   <option value="saitek_x56">🕹️ Saitek / Logitech X56 Rhino</option>
-                  <option value="tm_t16000m">🕹️ Thrustmaster T.16000M + TWCS</option>
                   <option value="tm_tca">🕹️ Thrustmaster TCA Airbus</option>
                   <option value="tm_tflight">🕹️ Thrustmaster T.Flight HOTAS</option>
                 </select>
@@ -1543,6 +1545,6 @@
 
   
 
-  <script src="app.js?v=5.5.3"></script>
+  <script src="app.js?v=5.6.0"></script>
 </body>
 </html>
