@@ -741,7 +741,7 @@ async def websocket_endpoint(websocket: WebSocket):
                     await hub.broadcast({"type": "diagnosis", **new_diag})
 
             elif msg_type == "rescan_hardware":
-                watcher.stick_slot, watcher.throttle_slot = watcher.scan_devices()
+                watcher.rescan_now()
                 if watcher.stick_slot is not None or watcher.throttle_slot is not None:
                     engine.set_active_kit(watcher.detected_kit)
                 await hub.broadcast({
@@ -837,8 +837,8 @@ def open_desktop_window():
 def run_glassmorphism_app():
     """Inicia os subsistemas, gera o perfil XML atualizado e abre o Dashboard."""
     sc_live = find_sc_live_dir(config.get("star_citizen_live_path"))
-    watcher.scan_devices()
-    startup_kit = watcher.detected_kit if (watcher.stick_slot is not None or watcher.throttle_slot is not None) else config.get("selected_hotas_kit", "warthog")
+    s_found, t_found = watcher.scan_devices()
+    startup_kit = watcher.detected_kit if (s_found is not None or t_found is not None) else config.get("selected_hotas_kit", "warthog")
     engine.set_active_kit(startup_kit)
     if sc_live:
         write_profile_to_sc(get_mappings_dir(sc_live), kit_id=startup_kit)
