@@ -22,7 +22,7 @@ from typing import Optional, Tuple
 
 from config import get_app_dir
 
-APP_VERSION = "5.9.6"
+APP_VERSION = "5.9.7"
 APP_DIR = get_app_dir()
 BACKUP_DIR = os.path.join(APP_DIR, "backups")
 STATE_FILE = os.path.join(APP_DIR, "update_state.json")
@@ -394,37 +394,63 @@ def apply_exe_self_update(download_url: str, expected_blob_sha: str = "", auto_e
             "source_url": download_url,
         })
 
-        # Cria script .bat isolado em %TEMP% para substituir o .exe após o processo sair e relançá-lo
+        # Cria script .bat isolado em %TEMP% para substituir o .exe após o processo (e o bootloader PyInstaller) sair
+        # IMPORTANTE: Usa 'ping -n 2 127.0.0.1' em vez de 'timeout /t 1', porque 'timeout' falha imediatamente
+        # com erro de stdin quando executado em modo DETACHED_PROCESS / sem consola!
         pid = os.getpid()
+        ppid = os.getppid()
+        exe_basename = os.path.basename(current_exe)
         bat_path = os.path.join(tempfile.gettempdir(), f"sc_warthog_update_{pid}.bat")
-        bat_content = (
-            "@echo off\r\n"
-            "setlocal\r\n"
-            f"set \"TARGET={current_exe}\"\r\n"
-            f"set \"STAGED={staged_exe}\"\r\n"
-            ":wait_loop\r\n"
-            f"tasklist /FI \"PID eq {pid}\" 2>NUL | find /I \"{pid}\" >NUL\r\n"
-            "if not errorlevel 1 (\r\n"
-            "    timeout /t 1 /nobreak >NUL\r\n"
-            "    goto wait_loop\r\n"
-            ")\r\n"
-            "timeout /t 1 /nobreak >NUL\r\n"
-            "set /a retries=0\r\n"
-            ":replace_loop\r\n"
-            "move /Y \"%STAGED%\" \"%TARGET%\" >NUL 2>&1\r\n"
-            "if errorlevel 1 (\r\n"
-            "    set /a retries+=1\r\n"
-            "    if %retries% LSS 15 (\r\n"
-            "        timeout /t 1 /nobreak >NUL\r\n"
-            "        goto replace_loop\r\n"
-            "    )\r\n"
-            "    exit /b 1\r\n"
-            ")\r\n"
-            "start \"\" \"%TARGET%\"\r\n"
-            "del \"%~f0\" >NUL 2>&1\r\n"
-        )
-        with open(bat_path, "w", encoding="utf-8") as bf:
-            bf.write(bat_content)
+        bat_lines = [
+            "@echo off",
+            "setlocal EnableDelayedExpansion",
+            f'set "TARGET={current_exe}"',
+            f'set "STAGED={staged_exe}"',
+            f'set "LOGFILE={LOG_FILE}"',
+            "set /a wait_cnt=0",
+            ":wait_loop",
+            "set /a wait_cnt+=1",
+            "if !wait_cnt! GTR 15 goto force_kill",
+            f'tasklist /FI "PID eq {pid}" 2>NUL | find /I "{pid}" >NUL',
+            "if not errorlevel 1 (",
+            "    ping -n 2 127.0.0.1 >NUL",
+            "    goto wait_loop",
+            ")",
+            f'tasklist /FI "PID eq {ppid}" 2>NUL | find /I "{exe_basename}" >NUL',
+            "if not errorlevel 1 (",
+            "    ping -n 2 127.0.0.1 >NUL",
+            "    goto wait_loop",
+            ")",
+            "goto do_replace",
+            ":force_kill",
+            f'taskkill /F /IM "{exe_basename}" >NUL 2>&1',
+            "ping -n 2 127.0.0.1 >NUL",
+            ":do_replace",
+            "ping -n 2 127.0.0.1 >NUL",
+            "set /a retries=0",
+            ":replace_loop",
+            'move /Y "%STAGED%" "%TARGET%" >NUL 2>&1',
+            "if not errorlevel 1 goto launch_new",
+            'copy /Y "%STAGED%" "%TARGET%" >NUL 2>&1',
+            "if not errorlevel 1 (",
+            '    del /F /Q "%STAGED%" >NUL 2>&1',
+            "    goto launch_new",
+            ")",
+            "set /a retries+=1",
+            "if !retries! LSS 30 (",
+            "    ping -n 2 127.0.0.1 >NUL",
+            "    goto replace_loop",
+            ")",
+            'echo [UPDATE ERROR] Nao foi possivel substituir %TARGET% apos 30 tentativas.>>"%LOGFILE%"',
+            "exit /b 1",
+            ":launch_new",
+            'echo [UPDATE OK] Executavel atualizado e relancado com sucesso.>>"%LOGFILE%"',
+            'start "" "%TARGET%"',
+            'del /F /Q "%~f0" >NUL 2>&1',
+            "",
+        ]
+        with open(bat_path, "w", encoding="utf-8", newline="") as bf:
+            bf.write("\r\n".join(bat_lines))
 
         CREATE_NO_WINDOW = 0x08000000
         DETACHED_PROCESS = 0x00000008

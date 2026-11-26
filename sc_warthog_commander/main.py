@@ -124,4 +124,26 @@ def main():
     run_glassmorphism_app()
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception as exc:
+        import traceback
+        tb = traceback.format_exc()
+        if getattr(sys, "frozen", False):
+            try:
+                log_path = os.path.join(os.path.dirname(os.path.abspath(sys.executable)), "crash_log.txt")
+                with open(log_path, "a", encoding="utf-8") as cf:
+                    cf.write(f"\n[{time.strftime('%Y-%m-%d %H:%M:%S')}] FATAL STARTUP ERROR:\n{tb}\n")
+            except Exception:
+                pass
+            try:
+                import ctypes
+                ctypes.windll.user32.MessageBoxW(
+                    0,
+                    f"Erro ao iniciar SC Warthog Commander:\n\n{exc}\n\nDetalhes guardados em crash_log.txt",
+                    "SC Warthog Commander - Erro",
+                    0x10,
+                )
+            except Exception:
+                pass
+        raise
