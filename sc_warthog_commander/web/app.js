@@ -2666,6 +2666,7 @@ function saveModalKey() {
   }
 
   renderMatrixRows();
+  if (typeof renderVoiceCalloutsEditor === 'function') renderVoiceCalloutsEditor();
   closeKeyEditorModal();
 }
 
@@ -3032,7 +3033,58 @@ const VOICE_CALLOUTS = {
     PROF_combat: 'Combat profile loaded.',
     PROF_mining: 'Mining profile loaded.',
     PROF_cargo: 'Cargo logistics profile loaded.',
-    PROF_ground: 'Ground vehicle profile loaded.'
+    PROF_ground: 'Ground vehicle profile loaded.',
+    // Logitech G / Saitek X56 Rhino (Stick BTN 1..17 + Throttle BTN 1..36)
+    X56_STK_1: 'Primary weapons.',
+    X56_STK_2: 'Missile lock.',
+    X56_STK_3: 'Gimbal mode toggled.',
+    X56_STK_4: 'Master mode toggled.',
+    X56_STK_5: 'Decoupled flight toggled.',
+    X56_STK_6: 'Shift layer active.',
+    X56_STK_7: 'Target locked.',
+    X56_STK_8: 'Next hostile target.',
+    X56_STK_9: 'Nearest hostile targeted.',
+    X56_STK_10: 'Next target.',
+    X56_STK_11: 'Radar ping.',
+    X56_STK_12: 'Noise countermeasure deployed.',
+    X56_STK_13: 'Decoy flare deployed.',
+    X56_STK_14: 'Shields balanced.',
+    X56_THR_1: 'Boost engaged.',
+    X56_THR_2: 'Cruise control toggled.',
+    X56_THR_3: 'Space brake engaged.',
+    X56_THR_4: 'Reverse thrust.',
+    X56_THR_5: 'Quantum drive engaged.',
+    X56_THR_6: 'Systems online. Flight ready.',
+    X56_THR_7: 'Powering down ship systems.',
+    X56_THR_8: 'Thrusters power toggled.',
+    X56_THR_9: 'Weapons power toggled.',
+    X56_THR_10: 'Shields power toggled.',
+    X56_THR_11: 'Requesting landing clearance.',
+    X56_THR_12: 'Landing gear toggled.',
+    X56_THR_13: 'Requesting landing clearance.',
+    X56_THR_14: 'VTOL thrusters toggled.',
+    X56_THR_15: 'Exterior headlights toggled.',
+    X56_THR_16: 'Exterior doors opening.',
+    X56_THR_17: 'Exterior doors closing.',
+    X56_THR_18: 'Ship doors locked.',
+    X56_THR_19: 'Helmet visor wiped.',
+    X56_THR_20: 'Scanner mode.',
+    X56_THR_21: 'External camera.',
+    X56_THR_22: 'Mining mode.',
+    X56_THR_23: 'Target speed matched.',
+    X56_THR_24: 'Strafe up.',
+    X56_THR_25: 'Strafe right.',
+    X56_THR_26: 'Strafe down.',
+    X56_THR_27: 'Strafe left.',
+    X56_THR_28: 'Arming additional missile.',
+    X56_THR_29: 'Missile salvo reset.',
+    X56_THR_30: 'Speed limiter increased.',
+    X56_THR_31: 'Speed limiter decreased.',
+    X56_THR_32: 'Comms channel open.',
+    X56_THR_33: 'Quantum navigation mode.',
+    X56_THR_34: 'Mode one. Combat profile.',
+    X56_THR_35: 'Mode two. Mining profile.',
+    X56_THR_36: 'Mode S one. Cargo profile.'
   },
   pt: {
     APU_ON: 'Sistemas ligados. Nave pronta para voo.',
@@ -3093,7 +3145,58 @@ const VOICE_CALLOUTS = {
     PROF_combat: 'Perfil de combate carregado.',
     PROF_mining: 'Perfil de mineração carregado.',
     PROF_cargo: 'Perfil de carga carregado.',
-    PROF_ground: 'Perfil terrestre carregado.'
+    PROF_ground: 'Perfil terrestre carregado.',
+    // Logitech G / Saitek X56 Rhino (Stick BTN 1..17 + Throttle BTN 1..36)
+    X56_STK_1: 'Armas primárias.',
+    X56_STK_2: 'Míssil armado.',
+    X56_STK_3: 'Modo gimbal alternado.',
+    X56_STK_4: 'Master mode alternado.',
+    X56_STK_5: 'Voo desacoplado alternado.',
+    X56_STK_6: 'Camada shift ativa.',
+    X56_STK_7: 'Alvo sob a mira selecionado.',
+    X56_STK_8: 'Próximo alvo hostil.',
+    X56_STK_9: 'Alvo hostil mais próximo.',
+    X56_STK_10: 'Próximo alvo.',
+    X56_STK_11: 'Ping de radar.',
+    X56_STK_12: 'Campo de ruído lançado.',
+    X56_STK_13: 'Contramedida flare lançada.',
+    X56_STK_14: 'Escudos equilibrados.',
+    X56_THR_1: 'Pós-combustão ativa.',
+    X56_THR_2: 'Controlo de cruzeiro alternado.',
+    X56_THR_3: 'Travão espacial ativo.',
+    X56_THR_4: 'Propulsão invertida.',
+    X56_THR_5: 'Motor Quantum ativado.',
+    X56_THR_6: 'Sistemas ligados. Nave pronta para voo.',
+    X56_THR_7: 'A desligar sistemas da nave.',
+    X56_THR_8: 'Energia dos propulsores alternada.',
+    X56_THR_9: 'Energia das armas alternada.',
+    X56_THR_10: 'Energia dos escudos alternada.',
+    X56_THR_11: 'A contactar torre de controlo.',
+    X56_THR_12: 'Trem de aterragem alternado.',
+    X56_THR_13: 'A pedir autorização de aterragem.',
+    X56_THR_14: 'Propulsores VTOL alternados.',
+    X56_THR_15: 'Faróis exteriores alternados.',
+    X56_THR_16: 'A abrir todas as portas.',
+    X56_THR_17: 'A fechar todas as portas.',
+    X56_THR_18: 'Portas da nave trancadas.',
+    X56_THR_19: 'Visor do capacete limpo.',
+    X56_THR_20: 'Modo de scan.',
+    X56_THR_21: 'Câmara exterior.',
+    X56_THR_22: 'Modo de mineração.',
+    X56_THR_23: 'Velocidade igualada ao alvo.',
+    X56_THR_24: 'Propulsor vertical subir.',
+    X56_THR_25: 'Strafe direita.',
+    X56_THR_26: 'Propulsor vertical descer.',
+    X56_THR_27: 'Strafe esquerda.',
+    X56_THR_28: 'Mais um míssil armado.',
+    X56_THR_29: 'Salva de mísseis reiniciada.',
+    X56_THR_30: 'Limite de velocidade aumentado.',
+    X56_THR_31: 'Limite de velocidade diminuído.',
+    X56_THR_32: 'Comunicações abertas.',
+    X56_THR_33: 'Modo Quantum ativado.',
+    X56_THR_34: 'Modo 1. Perfil de combate.',
+    X56_THR_35: 'Modo 2. Perfil de mineração.',
+    X56_THR_36: 'Modo S1. Perfil de carga.'
   }
 };
 
@@ -3179,7 +3282,7 @@ function triggerShipVoiceForAction(actionId, desc) {
   const m = cachedMatrixMappings[cleanId];
   const fallbackDesc = (m && m.desc) || desc || '';
   if (fallbackDesc && !cleanId.startsWith('SPDBRK_RELEASE')) {
-    const shortTxt = fallbackDesc.split('(')[0].replace(/\[.*?\]/g, '').trim();
+    const shortTxt = _cleanVoiceDesc(fallbackDesc);
     if (shortTxt) speakShipAI(shortTxt);
   }
 }
@@ -3587,8 +3690,9 @@ function updateVisualKitGraphics(stickKitId, throttleKitId, stickAuto = false, t
   if (stickImg) stickImg.src = getStickImageForKit(sId);
   if (thrImg) thrImg.src = getThrottleImageForKit(tId, leftRole);
 
-  // Re-renderiza a lista de botões e os pins interativos para corresponderem exatamente ao kit ativo!
+  // Re-renderiza a lista de botões, os pins interativos e o editor de Voz AI para o kit ativo!
   renderVisualMapping();
+  if (typeof renderVoiceCalloutsEditor === 'function') renderVoiceCalloutsEditor();
 }
 
 function renderHotasKitsGrid() {
@@ -4019,15 +4123,33 @@ const VOICE_EVENT_LABELS = {
   PROF_ground: 'PERFIL — Terrestre'
 };
 
+function _cleanVoiceDesc(raw) {
+  if (!raw) return '';
+  let s = String(raw).replace(/\[.*?\]/g, '').trim();
+  // Se tiver formato "SW 1 Cima (BTN 06): Flight Ready (Alt+R)", fala a ação depois de ':' em vez do nome do botão!
+  const colonIdx = s.indexOf(':');
+  if (colonIdx !== -1 && colonIdx < s.length - 2) {
+    s = s.slice(colonIdx + 1).trim();
+  }
+  s = s.replace(/\([^)]*\)/g, '').trim();
+  return s;
+}
+
 function getResolvedVoicePhrase(actionId) {
   const custom = (voiceSettings.custom_callouts || {})[actionId];
   if (custom !== undefined && custom !== null && String(custom).trim() !== '') {
     return String(custom).trim();
   }
+  const m = (typeof cachedMatrixMappings === 'object' && cachedMatrixMappings) ? cachedMatrixMappings[actionId] : null;
+  // Se o utilizador personalizou a descrição do botão no Editor de Teclas (sem o formato padrão "(BTN XX):"),
+  // fala diretamente a nova descrição atribuída ao botão!
+  if (m && m.desc && !/\(BTN\s+\d+\)/i.test(m.desc) && (actionId.startsWith('X56_') || actionId.startsWith('STICK_BTN_'))) {
+    const cleaned = _cleanVoiceDesc(m.desc);
+    if (cleaned) return cleaned;
+  }
   const bank = VOICE_CALLOUTS[voiceSettings.lang] || VOICE_CALLOUTS.en;
   if (bank[actionId]) return bank[actionId];
-  const m = (typeof cachedMatrixMappings === 'object' && cachedMatrixMappings) ? cachedMatrixMappings[actionId] : null;
-  if (m && m.desc) return m.desc.split('(')[0].replace(/\[.*?\]/g, '').trim();
+  if (m && m.desc) return _cleanVoiceDesc(m.desc);
   return '';
 }
 
@@ -4039,16 +4161,27 @@ function renderVoiceCalloutsEditor() {
   const cont = document.getElementById('voice-callouts-editor-list');
   if (!cont) return;
   const q = (document.getElementById('voice-callouts-search')?.value || '').trim().toLowerCase();
-  // Combine ALL ship events + ALL mapped actions (19 Stick, 32 Throttle, Hats, Shift Layer, Profiles)
-  const keySet = new Set(Object.keys(VOICE_EVENT_LABELS));
-  if (typeof cachedMatrixMappings === 'object' && cachedMatrixMappings) {
-    Object.keys(cachedMatrixMappings).forEach(k => keySet.add(k));
+  const keySet = new Set();
+
+  // Mostra primeiro os controlos do kit HOTAS ativo (ex.: Logitech G X56 Rhino ou Warthog)!
+  const activeStickGroups = (typeof getActiveVisualGroups === 'function') ? getActiveVisualGroups('stick') : STICK_VISUAL_GROUPS;
+  const activeThrGroups = (typeof getActiveVisualGroups === 'function') ? getActiveVisualGroups('throttle') : THROTTLE_VISUAL_GROUPS;
+  if (Array.isArray(activeThrGroups)) {
+    activeThrGroups.forEach(g => g.items.forEach(it => { if (!it.isAxis && it.actionId) keySet.add(it.actionId); }));
   }
-  if (typeof STICK_VISUAL_GROUPS !== 'undefined') {
-    STICK_VISUAL_GROUPS.forEach(g => g.items.forEach(it => { if (!it.isAxis && it.actionId) keySet.add(it.actionId); }));
+  if (Array.isArray(activeStickGroups)) {
+    activeStickGroups.forEach(g => g.items.forEach(it => { if (!it.isAxis && it.actionId) keySet.add(it.actionId); }));
   }
-  if (typeof THROTTLE_VISUAL_GROUPS !== 'undefined') {
-    THROTTLE_VISUAL_GROUPS.forEach(g => g.items.forEach(it => { if (!it.isAxis && it.actionId) keySet.add(it.actionId); }));
+
+  // Adiciona eventos globais (Shift Layer, Perfis, Hats)
+  ['SHIFT_MODIFIER_ON', 'PROF_combat', 'PROF_mining', 'PROF_cargo', 'PROF_ground'].forEach(k => keySet.add(k));
+
+  // Quando não está em modo X56, inclui todos os switches Warthog; se pesquisar, inclui tudo
+  if (activeHotasKit !== 'saitek_x56' || q) {
+    Object.keys(VOICE_EVENT_LABELS).forEach(k => keySet.add(k));
+    if (typeof cachedMatrixMappings === 'object' && cachedMatrixMappings) {
+      Object.keys(cachedMatrixMappings).forEach(k => keySet.add(k));
+    }
   }
   const keys = Array.from(keySet);
 
@@ -4180,7 +4313,7 @@ function triggerShipVoiceForAction(actionId, desc) {
   const m = cachedMatrixMappings[cleanId];
   const fallbackDesc = (m && m.desc) || desc || '';
   if (fallbackDesc && !cleanId.startsWith('SPDBRK_RELEASE')) {
-    const shortTxt = fallbackDesc.split('(')[0].replace(/\[.*?\]/g, '').trim();
+    const shortTxt = _cleanVoiceDesc(fallbackDesc);
     if (shortTxt) speakShipAI(shortTxt);
   }
 }
