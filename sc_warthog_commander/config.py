@@ -98,6 +98,7 @@ DEFAULT_CONFIG = {
     "voice_settings": DEFAULT_VOICE_SETTINGS,
     "selected_hotas_kit": "warthog",
     "auto_check_updates": True,
+    "auto_apply_updates": True,
     "update_source": "tiagofcustodio/Sc-commander-warthog",
     "axis_calibration": DEFAULT_AXIS_CALIBRATION
 }

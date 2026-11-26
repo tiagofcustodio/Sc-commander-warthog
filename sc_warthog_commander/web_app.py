@@ -854,20 +854,43 @@ def run_glassmorphism_app():
     tray_icon_ref = tray
     tray.start()
 
-    def _bg_update_check():
-        if config.get("auto_check_updates", True):
-            time.sleep(2.0)
-            res = check_for_updates(config.get("update_source", ""))
-            latest_update_info.clear()
-            latest_update_info.update(res)
-            broadcast_threadsafe({
-                "type": "update_status",
-                **latest_update_info,
-                "auto_check_updates": config.get("auto_check_updates", True),
-                "update_source": config.get("update_source", "")
-            })
+    def _bg_update_loop():
+        # Verifica ao arrancar (após 3s) e depois a cada 15 minutos enquanto o programa corre
+        time.sleep(3.0)
+        while True:
+            if config.get("auto_check_updates", True):
+                res = check_for_updates(config.get("update_source", ""))
+                latest_update_info.clear()
+                latest_update_info.update(res)
+                broadcast_threadsafe({
+                    "type": "update_status",
+                    **latest_update_info,
+                    "auto_check_updates": config.get("auto_check_updates", True),
+                    "update_source": config.get("update_source", "")
+                })
+                # Em modo executável (.exe), aplica automaticamente qualquer novo commit do GitHub!
+                if (
+                    getattr(sys, "frozen", False)
+                    and res.get("update_available")
+                    and res.get("download_url")
+                    and config.get("auto_apply_updates", True)
+                ):
+                    broadcast_threadsafe({
+                        "type": "action",
+                        "action_id": "AUTO_UPDATE",
+                        "key": "GITHUB",
+                        "desc": f"⬆️ Nova atualização detetada ({res.get('commit_sha', '')}) — a descarregar e reiniciar automaticamente...",
+                        "time": time.strftime("%H:%M:%S")
+                    })
+                    apply_res = apply_update(
+                        res.get("download_url", ""),
+                        expected_blob_sha=res.get("remote_blob_sha", "")
+                    )
+                    if apply_res.get("ok"):
+                        return
+            time.sleep(900.0)  # Re-verifica a cada 15 minutos
 
-    threading.Thread(target=_bg_update_check, daemon=True).start()
+    threading.Thread(target=_bg_update_loop, daemon=True).start()
     threading.Thread(target=open_desktop_window, daemon=True).start()
 
     print(f"\n⚡ [Warthog SC Commander Pro] Servidor ativo em http://{HOST}:{PORT}")
