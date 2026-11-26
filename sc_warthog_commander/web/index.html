@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;600;700;800&family=Rajdhani:wght@500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=5.9.1">
+  <link rel="stylesheet" href="style.css?v=5.9.2">
 </head>
 <body>
 
@@ -23,7 +23,7 @@
         </div>
         <div class="brand-text">
           <h1>WARTHOG MFD</h1>
-          <span class="mil-version-tag" id="app-version-tag">UEE // MIL-GLASS v5.9.1</span>
+          <span class="mil-version-tag" id="app-version-tag">UEE // MIL-GLASS v5.9.2</span>
         </div>
       </div>
 
@@ -1454,10 +1454,17 @@
           <input type="text" id="modal-input-key" class="matrix-search-input" placeholder="Ex: R, SPACE, MOUSE1, MOUSE2, MWHEEL_UP" oninput="updateModalPreview()">
         </div>
         <div class="form-group">
-          <label>Duração do Pulso:</label>
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <input type="range" id="modal-slider-hold" min="20" max="400" step="10" value="60" oninput="updateHoldDurationDisplay(this.value)">
-            <span id="modal-hold-display" style="font-family: var(--font-mono); font-size: 13px; color: var(--neon-cyan); min-width: 50px;">60ms</span>
+          <label>Duração do Pulso (Impulso de Tempo):</label>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <input type="range" id="modal-slider-hold" min="20" max="3000" step="10" value="60" style="flex: 1;" oninput="updateHoldDurationDisplay(this.value)">
+            <input type="number" id="modal-input-hold" class="matrix-search-input" min="20" max="10000" step="10" value="60" style="width: 78px; padding: 4px 6px; text-align: right; font-family: var(--font-mono); font-size: 12px;" oninput="updateHoldDurationDisplay(this.value, true)">
+            <span id="modal-hold-display" style="font-family: var(--font-mono); font-size: 12px; color: var(--neon-cyan); min-width: 48px;">60ms</span>
+          </div>
+          <div style="display: flex; gap: 5px; margin-top: 5px; flex-wrap: wrap;">
+            <button type="button" class="btn-secondary" style="padding: 2px 7px; font-size: 10px;" onclick="updateHoldDurationDisplay(60)">60ms Tap</button>
+            <button type="button" class="btn-secondary" style="padding: 2px 7px; font-size: 10px;" onclick="updateHoldDurationDisplay(300)">300ms Curto</button>
+            <button type="button" class="btn-secondary" style="padding: 2px 7px; font-size: 10px;" onclick="updateHoldDurationDisplay(800)">800ms Master/NAV</button>
+            <button type="button" class="btn-secondary" style="padding: 2px 7px; font-size: 10px;" onclick="updateHoldDurationDisplay(1500)">1500ms Hold SC</button>
           </div>
         </div>
       </div>
@@ -1500,7 +1507,10 @@
 
         <div style="display: flex; align-items: center; gap: 8px;">
           <span style="font-size: 10.5px; color: var(--text-secondary); white-space: nowrap;">Tempo p/ Hold:</span>
-          <input type="range" id="modal-slider-long-threshold" min="250" max="1200" step="50" value="450" style="flex: 1;" oninput="document.getElementById('modal-long-threshold-display').textContent = this.value + 'ms'">
+          <input type="range" id="modal-slider-long-threshold" min="200" max="2000" step="50" value="450" style="flex: 1;" oninput="document.getElementById('modal-long-threshold-display').textContent = this.value + 'ms'">
+          <span style="font-size: 10.5px; color: var(--text-secondary); white-space: nowrap;">Pulso:</span>
+          <input type="number" id="modal-input-long-hold" class="matrix-search-input" min="20" max="10000" step="10" value="120" style="width: 72px; padding: 3px 6px; text-align: right; font-family: var(--font-mono); font-size: 11px;" title="Duração do impulso da tecla de pressão longa (ms)">
+          <span style="font-family: var(--font-mono); font-size: 10.5px; color: var(--text-dim);">ms</span>
         </div>
 
         <div class="form-row">
@@ -1545,6 +1555,6 @@
 
   
 
-  <script src="app.js?v=5.9.1"></script>
+  <script src="app.js?v=5.9.2"></script>
 </body>
 </html>

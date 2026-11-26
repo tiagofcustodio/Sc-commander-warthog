@@ -2383,9 +2383,8 @@ function openKeyEditorModal(actionId) {
   document.getElementById('modal-chk-ctrl').checked = mods.includes('CTRL');
   document.getElementById('modal-chk-shift').checked = mods.includes('SHIFT');
 
-  const hold = m.hold_ms !== undefined ? m.hold_ms : 60;
-  document.getElementById('modal-slider-hold').value = hold;
-  document.getElementById('modal-hold-display').textContent = `${hold}ms`;
+  const hold = (m.hold_ms !== undefined && m.hold_ms !== null && Number(m.hold_ms) > 0) ? Number(m.hold_ms) : 60;
+  updateHoldDurationDisplay(hold);
 
   populateMacroSelects();
   const selMacro = document.getElementById('modal-select-macro');
@@ -2407,6 +2406,8 @@ function openKeyEditorModal(actionId) {
   const lDisp = document.getElementById('modal-long-threshold-display');
   if (lSlider) lSlider.value = lThresh;
   if (lDisp) lDisp.textContent = `${lThresh}ms`;
+  const lHoldInput = document.getElementById('modal-input-long-hold');
+  if (lHoldInput) lHoldInput.value = m.long_hold_ms || 120;
 
   stopKeyCapture();
   updateModalPreview();
@@ -2422,8 +2423,16 @@ function closeKeyEditorModal() {
   editingActionId = null;
 }
 
-function updateHoldDurationDisplay(val) {
-  document.getElementById('modal-hold-display').textContent = `${val}ms`;
+function updateHoldDurationDisplay(val, fromNumberInput = false) {
+  let num = parseInt(val, 10);
+  if (isNaN(num)) num = 60;
+  num = Math.max(20, Math.min(10000, num));
+  const slider = document.getElementById('modal-slider-hold');
+  const numInput = document.getElementById('modal-input-hold');
+  const disp = document.getElementById('modal-hold-display');
+  if (slider) slider.value = Math.min(3000, num);
+  if (numInput && !fromNumberInput) numInput.value = num;
+  if (disp) disp.textContent = `${num}ms`;
 }
 
 function updateModalPreview() {
@@ -2547,7 +2556,9 @@ function saveModalKey() {
 
   const key = document.getElementById('modal-input-key').value.trim().toUpperCase();
   const desc = document.getElementById('modal-input-desc').value.trim() || editingActionId;
-  const hold = parseInt(document.getElementById('modal-slider-hold').value, 10) || 60;
+  const numInputEl = document.getElementById('modal-input-hold');
+  const holdRaw = numInputEl ? numInputEl.value : document.getElementById('modal-slider-hold').value;
+  const hold = Math.max(20, Math.min(10000, parseInt(holdRaw, 10) || 60));
 
   const mods = [];
   if (document.getElementById('modal-chk-alt').checked) mods.push('ALT');
@@ -2562,6 +2573,7 @@ function saveModalKey() {
   if (document.getElementById('modal-chk-long-ctrl')?.checked) longMods.push('CTRL');
   if (document.getElementById('modal-chk-long-shift')?.checked) longMods.push('SHIFT');
   const longThresh = parseInt(document.getElementById('modal-slider-long-threshold')?.value || '450', 10);
+  const longHold = Math.max(20, Math.min(10000, parseInt(document.getElementById('modal-input-long-hold')?.value || '120', 10) || 120));
 
   const payload = {
     type: 'update_mapping',
@@ -2573,6 +2585,7 @@ function saveModalKey() {
     macro_id: macroId,
     long_key: longKey,
     long_modifiers: longMods,
+    long_hold_ms: longHold,
     long_macro_id: longMacroId,
     long_threshold_ms: longThresh
   };
@@ -2585,6 +2598,7 @@ function saveModalKey() {
     macro_id: macroId,
     long_key: longKey,
     long_modifiers: longMods,
+    long_hold_ms: longHold,
     long_macro_id: longMacroId,
     long_threshold_ms: longThresh
   };
@@ -2634,7 +2648,21 @@ function testModalKey() {
   initAudio();
   playCockpitSound('chirp');
   if (editingActionId && ws && ws.readyState === WebSocket.OPEN) {
-    ws.send(JSON.stringify({ type: 'trigger_action', action_id: editingActionId }));
+    const key = document.getElementById('modal-input-key').value.trim().toUpperCase();
+    const numInputEl = document.getElementById('modal-input-hold');
+    const hold = Math.max(20, Math.min(10000, parseInt(numInputEl ? numInputEl.value : document.getElementById('modal-slider-hold').value, 10) || 60));
+    const mods = [];
+    if (document.getElementById('modal-chk-alt').checked) mods.push('ALT');
+    if (document.getElementById('modal-chk-ctrl').checked) mods.push('CTRL');
+    if (document.getElementById('modal-chk-shift').checked) mods.push('SHIFT');
+    ws.send(JSON.stringify({
+      type: 'trigger_action',
+      action_id: editingActionId,
+      preview: true,
+      key: key,
+      modifiers: mods,
+      hold_ms: hold
+    }));
   }
 }
 

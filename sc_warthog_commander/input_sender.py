@@ -136,7 +136,7 @@ def key_to_scancode(key_name: str) -> tuple[int, bool]:
     if k in SPECIAL_KEYS:
         vk = SPECIAL_KEYS[k]
         sc = user32.MapVirtualKeyW(vk, MAPVK_VK_TO_VSC)
-        is_ext = (k in ("UP", "DOWN", "LEFT", "RIGHT"))
+        is_ext = (k in ("UP", "DOWN", "LEFT", "RIGHT", "INSERT", "DELETE", "HOME", "END", "PGUP", "PGDN", "NUM_DIV"))
         return sc, is_ext
 
     # 3. Tecla alfanumérica simples (ex: 'R', 'N', '1')
@@ -214,58 +214,83 @@ def send_key_state(key: str, is_down: bool):
         _send_key_event(sc, flags)
 
 
-def send_key_pulse(key: str, modifiers: list[str] = None, hold_ms: int = 60):
+def _precise_sleep(seconds: float):
+    """Espera precisa com perf_counter() para respeitar exatamente a duração do impulso (hold_ms)."""
+    if seconds <= 0:
+        return
+    target = time.perf_counter() + seconds
+    if seconds > 0.025:
+        time.sleep(seconds - 0.015)
+    while time.perf_counter() < target:
+        rem = target - time.perf_counter()
+        if rem > 0.005:
+            time.sleep(0.002)
+        else:
+            time.sleep(0)
+
+
+def send_key_pulse(key: str, modifiers: list[str] = None, hold_ms: int = 60, blocking: bool = False):
     """
     Envia um pulso limpo da tecla, botão do rato ou roda do rato com eventuais modificadores (ex: LALT + N).
-    Executado em thread segura para não bloquear o loop de polling.
+    - Não bloqueia _input_lock durante o sleep (evita congelar outros botões durante impulsos longos!).
+    - Usa temporização de alta precisão (_precise_sleep) para respeitar hold_ms exatamente (20ms..10000ms).
+    - Com blocking=True (usado em macros), espera pelo fim exato do impulso antes de avançar para o passo seguinte.
     """
     if not key or key.strip().upper() == "Z":
         return
 
-    def _worker():
-        with _input_lock:
-            k_upper = key.strip().upper()
+    try:
+        hold_ms_int = max(20, int(hold_ms))
+    except (TypeError, ValueError):
+        hold_ms_int = 60
 
-            # 1. Pressiona modificadores
-            mod_scancodes = []
-            if modifiers:
+    def _worker():
+        k_upper = key.strip().upper()
+        mod_scancodes = []
+
+        # 1. Pressiona modificadores (lock apenas no SendInput, nunca durante o sleep!)
+        if modifiers:
+            with _input_lock:
                 for mod in modifiers:
                     m_sc, m_ext = key_to_scancode(mod)
                     if m_sc > 0:
                         flags = KEYEVENTF_EXTENDEDKEY if m_ext else 0
                         _send_key_event(m_sc, flags)
                         mod_scancodes.append((m_sc, flags))
-                time.sleep(0.01) # Pequena pausa para o motor do jogo registrar
-
-            # 2. Caso seja roda do rato (MWHEEL_UP / MWHEEL_DOWN)
-            if k_upper in ("MWHEEL_UP", "MWHEEL_DOWN"):
-                _send_mouse_wheel(WHEEL_DELTA if k_upper == "MWHEEL_UP" else -WHEEL_DELTA)
-                time.sleep(max(0.02, hold_ms / 1000.0))
-            elif k_upper in MOUSE_BUTTONS:
-                # Botões do rato (MOUSE1..MOUSE5)
-                _send_mouse_button(k_upper, True)
-                time.sleep(max(0.02, hold_ms / 1000.0))
-                _send_mouse_button(k_upper, False)
-            else:
-                # Pressiona a tecla principal
-                main_sc, main_ext = key_to_scancode(k_upper)
-                if main_sc > 0:
-                    flags = KEYEVENTF_EXTENDEDKEY if main_ext else 0
-                    _send_key_event(main_sc, flags)
-
-                # Mantém pressionado pela duração do pulso
-                sleep_time = max(0.02, hold_ms / 1000.0)
-                time.sleep(sleep_time)
-
-                # Solta a tecla principal
-                if main_sc > 0:
-                    flags = (KEYEVENTF_EXTENDEDKEY if main_ext else 0) | KEYEVENTF_KEYUP
-                    _send_key_event(main_sc, flags)
-
-            # 5. Solta os modificadores na ordem inversa
             if mod_scancodes:
-                time.sleep(0.01)
+                _precise_sleep(0.020)
+
+        sleep_time = hold_ms_int / 1000.0
+
+        # 2. Executa tecla principal / botão do rato / roda do rato
+        if k_upper in ("MWHEEL_UP", "MWHEEL_DOWN"):
+            with _input_lock:
+                _send_mouse_wheel(WHEEL_DELTA if k_upper == "MWHEEL_UP" else -WHEEL_DELTA)
+            _precise_sleep(sleep_time)
+        elif k_upper in MOUSE_BUTTONS:
+            with _input_lock:
+                _send_mouse_button(k_upper, True)
+            _precise_sleep(sleep_time)
+            with _input_lock:
+                _send_mouse_button(k_upper, False)
+        else:
+            main_sc, main_ext = key_to_scancode(k_upper)
+            if main_sc > 0:
+                down_flags = KEYEVENTF_EXTENDEDKEY if main_ext else 0
+                with _input_lock:
+                    _send_key_event(main_sc, down_flags)
+                _precise_sleep(sleep_time)
+                with _input_lock:
+                    _send_key_event(main_sc, down_flags | KEYEVENTF_KEYUP)
+
+        # 3. Solta os modificadores na ordem inversa após pequena margem
+        if mod_scancodes:
+            _precise_sleep(0.020)
+            with _input_lock:
                 for m_sc, m_flags in reversed(mod_scancodes):
                     _send_key_event(m_sc, m_flags | KEYEVENTF_KEYUP)
 
-    threading.Thread(target=_worker, daemon=True).start()
+    if blocking:
+        _worker()
+    else:
+        threading.Thread(target=_worker, daemon=True).start()

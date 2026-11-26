@@ -181,16 +181,23 @@ class ProfileManager:
             self.load_custom_overrides(custom_overrides)
 
     def load_custom_overrides(self, custom_overrides: dict):
-        """Aplica mapeamentos personalizados guardados pelo utilizador em cada perfil."""
+        """Aplica mapeamentos personalizados guardados pelo utilizador em cada perfil (preservando hold_ms, macros e pressão longa)."""
         for pid, p_maps in custom_overrides.items():
             if pid in PROFILES and isinstance(p_maps, dict):
                 for act_id, m_val in p_maps.items():
                     if isinstance(m_val, dict):
+                        cur = PROFILES[pid]["mappings"].get(act_id, {})
                         PROFILES[pid]["mappings"][act_id] = {
-                            "key": str(m_val.get("key", "")).strip().upper(),
-                            "modifiers": [str(mod).strip().upper() for mod in m_val.get("modifiers", []) if mod],
-                            "desc": str(m_val.get("desc", PROFILES[pid]["mappings"].get(act_id, {}).get("desc", act_id))),
-                            "hold_ms": int(m_val.get("hold_ms", 60))
+                            "key": str(m_val.get("key", cur.get("key", ""))).strip().upper(),
+                            "modifiers": [str(mod).strip().upper() for mod in m_val.get("modifiers", cur.get("modifiers", [])) if mod],
+                            "desc": str(m_val.get("desc", cur.get("desc", act_id))),
+                            "hold_ms": max(20, int(m_val.get("hold_ms") or cur.get("hold_ms", 60))),
+                            "macro_id": str(m_val.get("macro_id", cur.get("macro_id", ""))).strip(),
+                            "long_key": str(m_val.get("long_key", cur.get("long_key", ""))).strip().upper(),
+                            "long_modifiers": [str(mod).strip().upper() for mod in m_val.get("long_modifiers", cur.get("long_modifiers", [])) if mod],
+                            "long_hold_ms": max(20, int(m_val.get("long_hold_ms") or cur.get("long_hold_ms", 120))),
+                            "long_macro_id": str(m_val.get("long_macro_id", cur.get("long_macro_id", ""))).strip(),
+                            "long_threshold_ms": max(180, int(m_val.get("long_threshold_ms") or cur.get("long_threshold_ms", 450))),
                         }
 
     def update_single_mapping(self, action_id: str, mapping_data: dict, profile_id: str = None) -> dict:

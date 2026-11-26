@@ -501,7 +501,23 @@ async def websocket_endpoint(websocket: WebSocket):
 
             elif msg_type == "trigger_action":
                 act_id = data.get("action_id")
-                engine._dispatch_action(act_id, f"Teste Manual {act_id}")
+                if data.get("preview") and data.get("key"):
+                    from input_sender import send_key_pulse
+                    p_key = str(data.get("key", "")).strip().upper()
+                    p_mods = [str(m).strip().upper() for m in (data.get("modifiers") or []) if m]
+                    p_hold = max(20, int(data.get("hold_ms") or 60))
+                    if p_key and p_key != "Z":
+                        send_key_pulse(p_key, p_mods, p_hold)
+                        mod_str = "+".join(p_mods) + "+" if p_mods else ""
+                        await hub.broadcast({
+                            "type": "log",
+                            "timestamp": time.strftime("%H:%M:%S"),
+                            "action_id": act_id or "PREVIEW",
+                            "text": f"Teste Manual [{act_id or p_key}]",
+                            "key_hit": f"{mod_str}{p_key} ({p_hold}ms)"
+                        })
+                else:
+                    engine._dispatch_action(act_id, f"Teste Manual {act_id}")
 
             elif msg_type == "update_mapping":
                 act_id = data.get("action_id")

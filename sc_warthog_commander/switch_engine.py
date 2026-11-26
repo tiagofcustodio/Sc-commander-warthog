@@ -353,9 +353,14 @@ class SwitchEngine:
         macro_id = str(m.get("macro_id", "")).strip()
         desc = m.get("desc") or info["desc"]
 
-        # Teclas contínuas (Boost, Space Brake, Strafe) seguram a tecla enquanto o botão está premido
+        # Teclas contínuas (Boost, Space Brake, Strafe) seguram a tecla enquanto o botão está premido,
+        # EXCETO se o utilizador configurou explicitamente um impulso temporizado longo (hold_ms > 100ms).
+        try:
+            configured_hold = int(m.get("hold_ms") or self.default_hold_ms)
+        except (TypeError, ValueError):
+            configured_hold = self.default_hold_ms
         holdable_keys = {"LSHIFT", "RSHIFT", "X", "SPACE", "LCTRL", "A", "D", "S", "W"}
-        if key.upper() in holdable_keys and not mods and not macro_id and not self._has_long_press(act_id):
+        if key.upper() in holdable_keys and configured_hold <= 100 and not mods and not macro_id and not self._has_long_press(act_id):
             send_key_state(key, is_down)
             if is_down and self.on_action_triggered:
                 self.on_action_triggered(act_id, f"{key} (HOLD)", desc)
@@ -390,10 +395,11 @@ class SwitchEngine:
             for step in steps:
                 s_key = str(step.get("key", "")).strip().upper()
                 s_mods = [str(m).strip().upper() for m in step.get("modifiers", []) if m]
-                s_hold = int(step.get("hold_ms", self.default_hold_ms))
-                s_delay = int(step.get("delay_after_ms", 150))
+                s_hold = max(20, int(step.get("hold_ms") or self.default_hold_ms))
+                s_delay = max(0, int(step.get("delay_after_ms") or 0))
                 if s_key and s_key != "Z":
-                    send_key_pulse(s_key, s_mods, s_hold)
+                    # blocking=True garante que o delay_after_ms começa APÓS o impulso s_hold terminar!
+                    send_key_pulse(s_key, s_mods, s_hold, blocking=True)
                 if s_delay > 0:
                     time.sleep(s_delay / 1000.0)
 
@@ -513,7 +519,10 @@ class SwitchEngine:
 
         key = mapping.get("key", "").strip()
         modifiers = mapping.get("modifiers", [])
-        hold_ms = mapping.get("hold_ms", self.default_hold_ms)
+        try:
+            hold_ms = max(20, int(mapping.get("hold_ms") or self.default_hold_ms))
+        except (TypeError, ValueError):
+            hold_ms = self.default_hold_ms
         desc = mapping.get("desc", label)
 
         # Bloqueio explícito de Z / Shift+Z
@@ -525,5 +534,8 @@ class SwitchEngine:
 
         if self.on_action_triggered:
             mod_str = "+".join(modifiers) + "+" if modifiers else ""
-            key_combo = f"{mod_str}{key}" if key else "Nativo XML"
+            if key:
+                key_combo = f"{mod_str}{key} ({hold_ms}ms)" if hold_ms > 100 else f"{mod_str}{key}"
+            else:
+                key_combo = "Nativo XML"
             self.on_action_triggered(action_id, key_combo, desc)
