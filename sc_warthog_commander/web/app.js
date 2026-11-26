@@ -1965,6 +1965,39 @@ function updateAxisTelemetry(data) {
     if (valSl) valSl.textContent = `${pctSl}%`;
     if (barSl) barSl.style.width = `${pctSl}%`;
   }
+
+  // 4. Extra X56 Rotaries / Sliders & Stick Twist Yaw
+  if (data.slider2 !== undefined) {
+    const pctSl2 = Math.max(0, Math.min(100, Math.round((data.slider2 / 65535) * 100)));
+    const valSl2 = document.getElementById('val-thr-slider2');
+    const barSl2 = document.getElementById('bar-thr-slider2');
+    if (valSl2) valSl2.textContent = `${pctSl2}%`;
+    if (barSl2) barSl2.style.width = `${pctSl2}%`;
+  }
+
+  if (data.rty3 !== undefined) {
+    const pctR3 = Math.max(0, Math.min(100, Math.round((data.rty3 / 65535) * 100)));
+    const valR3 = document.getElementById('val-thr-rty3');
+    const barR3 = document.getElementById('bar-thr-rty3');
+    if (valR3) valR3.textContent = `${pctR3}%`;
+    if (barR3) barR3.style.width = `${pctR3}%`;
+  }
+
+  if (data.rty4 !== undefined) {
+    const pctR4 = Math.max(0, Math.min(100, Math.round((data.rty4 / 65535) * 100)));
+    const valR4 = document.getElementById('val-thr-rty4');
+    const barR4 = document.getElementById('bar-thr-rty4');
+    if (valR4) valR4.textContent = `${pctR4}%`;
+    if (barR4) barR4.style.width = `${pctR4}%`;
+  }
+
+  if (data.stick_rz !== undefined) {
+    const pctYaw = Math.max(0, Math.min(100, Math.round((data.stick_rz / 65535) * 100)));
+    const valYaw = document.getElementById('val-stick-rz');
+    const barYaw = document.getElementById('bar-stick-rz');
+    if (valYaw) valYaw.textContent = `${pctYaw}%`;
+    if (barYaw) barYaw.style.width = `${pctYaw}%`;
+  }
 }
 
 function updateDeadzone(val) {
@@ -3756,7 +3789,7 @@ function onAxisCalControlChanged() {
 function evalAxisCurve(normIn, cfg) {
   let x = Math.max(-1, Math.min(1, normIn));
   if (cfg.invert) x = -x;
-  const dz = Math.max(0, Math.min(0.45, (cfg.deadzone || 0) / 100.0));
+  const dz = Math.max(0, Math.min(0.50, (cfg.deadzone || 0) / 100.0));
   const sat = Math.max(0.5, Math.min(1.0, (cfg.saturation || 100) / 100.0));
   const absX = Math.abs(x);
   if (absX <= dz) return 0.0;
@@ -3778,7 +3811,11 @@ function updateLiveAxisForCalibration(data) {
   if (!data) return;
   if (data.stick_x !== undefined) liveAxisNorm.x = (data.stick_x - 32767.5) / 32767.5;
   if (data.stick_y !== undefined) liveAxisNorm.y = (data.stick_y - 32767.5) / 32767.5;
-  if (data.thr_z !== undefined)   liveAxisNorm.z = (data.thr_z - 32767.5) / 32767.5;
+  if (data.stick_rz !== undefined) {
+    liveAxisNorm.z = (data.stick_rz - 32767.5) / 32767.5;
+  } else if (data.z !== undefined) {
+    liveAxisNorm.z = (data.z - 32767.5) / 32767.5;
+  }
 
   const axesTab = document.getElementById('tab-axes');
   if (axesTab && axesTab.classList.contains('active')) {
@@ -3790,8 +3827,8 @@ function autoCalibrateAxisDrift() {
   initAudio();
   playCockpitSound('chirp');
   const rawPct = Math.abs(liveAxisNorm[selectedCalAxis] || 0) * 100.0;
-  // Sets deadzone to current idle drift + 2% safety margin (clamped 2%..20%)
-  const recommended = Math.min(20, Math.max(2, Math.ceil(rawPct) + 2));
+  // Sets deadzone to current idle drift + 2% safety margin (clamped 2%..50%)
+  const recommended = Math.min(50, Math.max(2, Math.ceil(rawPct) + 2));
   axisCalibration[selectedCalAxis].deadzone = recommended;
   syncAxisCalControlsUI();
   drawCurveCanvas();

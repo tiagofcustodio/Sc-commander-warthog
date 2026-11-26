@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;600;700;800&family=Rajdhani:wght@500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=5.9.3">
+  <link rel="stylesheet" href="style.css?v=5.9.4">
 </head>
 <body>
 
@@ -23,7 +23,7 @@
         </div>
         <div class="brand-text">
           <h1>WARTHOG MFD</h1>
-          <span class="mil-version-tag" id="app-version-tag">UEE // MIL-GLASS v5.9.3</span>
+          <span class="mil-version-tag" id="app-version-tag">UEE // MIL-GLASS v5.9.4</span>
         </div>
       </div>
 
@@ -191,11 +191,54 @@
               <!-- Center Friction Lever (Slider 1) -->
               <div style="background: rgba(0,0,0,0.35); padding: 8px 10px; border-radius: 6px; border: 1px solid rgba(0,210,255,0.15);">
                 <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px;">
-                  <span id="slider-role-label" style="color: var(--text-secondary);">LIMITADOR VELOC. (Slider 1):</span>
+                  <span id="slider-role-label" style="color: var(--text-secondary);">LIMITADOR VELOC. (Slider 1 / F):</span>
                   <span id="val-thr-slider" style="color: var(--neon-amber); font-family: var(--font-mono); font-weight: bold;">50%</span>
                 </div>
                 <div style="height: 6px; background: rgba(255,255,255,0.08); border-radius: 3px; overflow: hidden;">
                   <div id="bar-thr-slider" style="width: 50%; height: 100%; background: linear-gradient(90deg, #ff8800, #ffcc00); transition: width 0.05s;"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Linha Extra: Rotativos & Analógicos (X56 Slider 2 / RTY 3 / RTY 4 / Twist Yaw / C-Stick) -->
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 8px;">
+              <div style="background: rgba(0,0,0,0.30); padding: 6px 8px; border-radius: 5px; border: 1px solid rgba(0,210,255,0.12);">
+                <div style="display: flex; justify-content: space-between; font-size: 10px; margin-bottom: 3px;">
+                  <span style="color: var(--text-dim);">ROTATIVO G (SL2):</span>
+                  <span id="val-thr-slider2" style="color: var(--neon-amber); font-family: var(--font-mono); font-weight: bold;">50%</span>
+                </div>
+                <div style="height: 5px; background: rgba(255,255,255,0.08); border-radius: 3px; overflow: hidden;">
+                  <div id="bar-thr-slider2" style="width: 50%; height: 100%; background: linear-gradient(90deg, #ff8800, #ffcc00); transition: width 0.05s;"></div>
+                </div>
+              </div>
+
+              <div style="background: rgba(0,0,0,0.30); padding: 6px 8px; border-radius: 5px; border: 1px solid rgba(0,210,255,0.12);">
+                <div style="display: flex; justify-content: space-between; font-size: 10px; margin-bottom: 3px;">
+                  <span style="color: var(--text-dim);">BASE RTY 3:</span>
+                  <span id="val-thr-rty3" style="color: var(--neon-cyan); font-family: var(--font-mono); font-weight: bold;">50%</span>
+                </div>
+                <div style="height: 5px; background: rgba(255,255,255,0.08); border-radius: 3px; overflow: hidden;">
+                  <div id="bar-thr-rty3" style="width: 50%; height: 100%; background: linear-gradient(90deg, #0077ff, #00e5ff); transition: width 0.05s;"></div>
+                </div>
+              </div>
+
+              <div style="background: rgba(0,0,0,0.30); padding: 6px 8px; border-radius: 5px; border: 1px solid rgba(0,210,255,0.12);">
+                <div style="display: flex; justify-content: space-between; font-size: 10px; margin-bottom: 3px;">
+                  <span style="color: var(--text-dim);">BASE RTY 4:</span>
+                  <span id="val-thr-rty4" style="color: var(--neon-cyan); font-family: var(--font-mono); font-weight: bold;">50%</span>
+                </div>
+                <div style="height: 5px; background: rgba(255,255,255,0.08); border-radius: 3px; overflow: hidden;">
+                  <div id="bar-thr-rty4" style="width: 50%; height: 100%; background: linear-gradient(90deg, #0077ff, #00e5ff); transition: width 0.05s;"></div>
+                </div>
+              </div>
+
+              <div style="background: rgba(0,0,0,0.30); padding: 6px 8px; border-radius: 5px; border: 1px solid rgba(0,210,255,0.12);">
+                <div style="display: flex; justify-content: space-between; font-size: 10px; margin-bottom: 3px;">
+                  <span style="color: var(--text-dim);">TWIST YAW (Rz):</span>
+                  <span id="val-stick-rz" style="color: var(--neon-green); font-family: var(--font-mono); font-weight: bold;">50%</span>
+                </div>
+                <div style="height: 5px; background: rgba(255,255,255,0.08); border-radius: 3px; overflow: hidden;">
+                  <div id="bar-stick-rz" style="width: 50%; height: 100%; background: linear-gradient(90deg, #00b86b, #00e676); transition: width 0.05s;"></div>
                 </div>
               </div>
             </div>
@@ -1173,7 +1216,7 @@
               <div>
                 <label style="font-family: var(--font-mono); font-size: 10.5px; color: var(--mil-amber); text-transform: uppercase;">Zona Morta Anti-Drift (Centro):</label>
                 <div style="display: flex; align-items: center; gap: 10px; margin-top: 4px;">
-                  <input type="range" id="slider-axis-deadzone" min="0" max="25" value="3" style="flex: 1;" oninput="onAxisCalControlChanged()">
+                  <input type="range" id="slider-axis-deadzone" min="0" max="50" value="3" style="flex: 1;" oninput="onAxisCalControlChanged()">
                   <span id="label-axis-deadzone" style="font-family: var(--font-mono); font-size: 13px; font-weight: bold; color: var(--mil-amber); min-width: 36px;">3%</span>
                 </div>
               </div>
@@ -1209,7 +1252,7 @@
         <div class="glass-panel hud-brackets" style="padding: 20px;">
           <div class="deck-section-title">Zona Morta (Deadzone) do Mini-Stick Slew da Manete</div>
           <div style="display: flex; align-items: center; gap: 16px; margin-top: 8px;">
-            <input type="range" id="slider-deadzone" min="2" max="30" value="12" oninput="updateDeadzone(this.value)">
+            <input type="range" id="slider-deadzone" min="0" max="50" value="12" oninput="updateDeadzone(this.value)">
             <span id="label-deadzone" style="font-size: 18px; font-weight: bold; color: var(--neon-cyan); min-width: 50px;">12%</span>
           </div>
         </div>
@@ -1555,6 +1598,6 @@
 
   
 
-  <script src="app.js?v=5.9.3"></script>
+  <script src="app.js?v=5.9.4"></script>
 </body>
 </html>

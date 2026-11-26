@@ -198,11 +198,14 @@ class WarthogDeviceWatcher:
         self.cutoff_right = False
 
         # Eixos atuais (0..65535)
-        self.stick_axes = {"x": 32767, "y": 32767, "rz": 32767}
+        self.stick_axes = {"x": 32767, "y": 32767, "rz": 32767, "rx": 32767, "ry": 32767}
         self.throttle_axes = {
             "z": 65535,      # Manete Esquerda (0=Máx Frente, 65535=Idle Trás)
             "rz": 65535,     # Manete Direita Principal (0=Máx Frente, 65535=Idle Trás)
-            "slider": 32767, # Roda Fricção / Rotativo F (Speed Limiter)
+            "slider": 32767, # Roda Fricção / Rotativo F (Slider 1 / Speed Limiter)
+            "slider2": 32767,# Rotativo G (Slider 2 — X56)
+            "rty3": 32767,   # Rotativo Base RTY 3 (X56)
+            "rty4": 32767,   # Rotativo Base RTY 4 (X56)
             "slew_x": 32767, # Mini-stick Slew / Polegar X
             "slew_y": 32767  # Mini-stick Slew / Polegar Y
         }
@@ -608,6 +611,8 @@ class WarthogDeviceWatcher:
                     self.stick_axes["x"] = ax["x"]
                     self.stick_axes["y"] = ax["y"]
                     self.stick_axes["rz"] = ax["rz"]
+                    self.stick_axes["rx"] = ax["rx"]
+                    self.stick_axes["ry"] = ax["ry"]
                     if self.on_axis_change:
                         self.on_axis_change("stick", "x", ax["x"])
                         self.on_axis_change("stick", "y", ax["y"])
@@ -665,12 +670,18 @@ class WarthogDeviceWatcher:
                         self.throttle_axes["z"] = ax["x"]
                         self.throttle_axes["rz"] = ax["y"]
                         self.throttle_axes["slider"] = ax["slider0"] if self._backend_mode == "dinput8" else ax["z"]
+                        self.throttle_axes["slider2"] = ax["slider1"]
+                        self.throttle_axes["rty3"] = ax["rz"]
+                        self.throttle_axes["rty4"] = ax["z"]
                         self.throttle_axes["slew_x"] = ax["rx"]
                         self.throttle_axes["slew_y"] = ax["ry"]
                     else:
                         self.throttle_axes["z"] = ax["z"]
                         self.throttle_axes["rz"] = ax["rz"]
                         self.throttle_axes["slider"] = ax["slider0"]
+                        self.throttle_axes["slider2"] = ax["slider1"]
+                        self.throttle_axes["rty3"] = ax["rz"]
+                        self.throttle_axes["rty4"] = ax["z"]
                         self.throttle_axes["slew_x"] = ax["x"]
                         self.throttle_axes["slew_y"] = ax["y"]
 

@@ -571,12 +571,37 @@ def apply_axis_calibration_to_xml(xml_path: str, axis_cal: dict) -> tuple[bool, 
 
             ctype = str(cfg.get("curve_type", "expo"))
             exp_val = 1.0 if ctype == "linear" else max(1.0, min(3.5, float(cfg.get("exponent", 1.8))))
-            dz_val = max(0.0, min(0.30, float(cfg.get("deadzone", 3)) / 100.0))
+            dz_val = max(0.0, min(0.50, float(cfg.get("deadzone", 3)) / 100.0))
             inv_val = "1" if cfg.get("invert", False) else "0"
 
             el.set("exponent", f"{exp_val:.2f}")
             el.set("deadzone", f"{dz_val:.3f}")
             el.set("invert", inv_val)
+
+        # Também aplica deadzone de hardware em <deviceoptions> para o Stick (x, y, rotz)
+        stick_prod = (opt_stick.get("Product") or "").strip()
+        if stick_prod:
+            dev_opt = None
+            for dopt in profile.findall("deviceoptions"):
+                if (dopt.get("name") or "").strip() == stick_prod:
+                    dev_opt = dopt
+                    break
+            if dev_opt is None:
+                dev_opt = ET.SubElement(profile, "deviceoptions", {"name": stick_prod})
+            hw_map = {"x": "x", "y": "y", "z": "rotz"}
+            for ax_key, hw_input in hw_map.items():
+                cfg = axis_cal.get(ax_key)
+                if not isinstance(cfg, dict):
+                    continue
+                dz_val = max(0.0, min(0.50, float(cfg.get("deadzone", 3)) / 100.0))
+                opt_el = None
+                for o in dev_opt.findall("option"):
+                    if o.get("input") == hw_input:
+                        opt_el = o
+                        break
+                if opt_el is None:
+                    opt_el = ET.SubElement(dev_opt, "option", {"input": hw_input})
+                opt_el.set("deadzone", f"{dz_val:.3f}")
 
         tree.write(xml_path, encoding="utf-8", xml_declaration=False)
         return True, (

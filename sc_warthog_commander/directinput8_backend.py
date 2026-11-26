@@ -34,6 +34,27 @@ DIDF_ABSAXIS = 0x00000001
 DIERR_INPUTLOST = 0x8007001E
 DIERR_NOTACQUIRED = 0x8007000C
 
+DIPH_DEVICE = 0
+DIPH_BYOFFSET = 1
+DIPROP_RANGE = ctypes.c_void_p(4)  # MAKEDIPROP(4)
+
+
+class DIPROPHEADER(ctypes.Structure):
+    _fields_ = [
+        ("dwSize", wintypes.DWORD),
+        ("dwHeaderSize", wintypes.DWORD),
+        ("dwObj", wintypes.DWORD),
+        ("dwHow", wintypes.DWORD),
+    ]
+
+
+class DIPROPRANGE(ctypes.Structure):
+    _fields_ = [
+        ("diph", DIPROPHEADER),
+        ("lMin", wintypes.LONG),
+        ("lMax", wintypes.LONG),
+    ]
+
 
 class GUID(ctypes.Structure):
     _fields_ = [
@@ -405,6 +426,42 @@ class DirectInput8Manager:
         if (hr_df & 0x80000000) != 0:
             _com_call(dev_ptr, 2, ctypes.c_ulong, [])
             return None
+
+        # CRÍTICO PARA LOGITECH X56 / T.16000M / QUALQUER HOTAS:
+        # Força a escala de TODOS os eixos (incluindo rotativos 8-bit 0..255, sliders e alavancas 10-bit 0..1023)
+        # para 0..65535 diretamente no DirectInput8 (DIPROP_RANGE)!
+        rng = DIPROPRANGE()
+        rng.diph.dwSize = ctypes.sizeof(DIPROPRANGE)
+        rng.diph.dwHeaderSize = ctypes.sizeof(DIPROPHEADER)
+        rng.diph.dwObj = 0
+        rng.diph.dwHow = DIPH_DEVICE
+        rng.lMin = 0
+        rng.lMax = 65535
+        # IDirectInputDevice8W::SetProperty = vtable index 6
+        hr_rng = _com_call(
+            dev_ptr, 6, ctypes.c_ulong,
+            [ctypes.c_void_p, ctypes.POINTER(DIPROPHEADER)],
+            DIPROP_RANGE, ctypes.byref(rng.diph)
+        )
+        # Fallback eixo-a-eixo caso algum driver recuse DIPH_DEVICE global
+        if (hr_rng & 0x80000000) != 0:
+            for ofs in (
+                DIJOYSTATE2.lX.offset, DIJOYSTATE2.lY.offset, DIJOYSTATE2.lZ.offset,
+                DIJOYSTATE2.lRx.offset, DIJOYSTATE2.lRy.offset, DIJOYSTATE2.lRz.offset,
+                DIJOYSTATE2.rglSlider.offset, DIJOYSTATE2.rglSlider.offset + 4,
+            ):
+                rng_ax = DIPROPRANGE()
+                rng_ax.diph.dwSize = ctypes.sizeof(DIPROPRANGE)
+                rng_ax.diph.dwHeaderSize = ctypes.sizeof(DIPROPHEADER)
+                rng_ax.diph.dwObj = ofs
+                rng_ax.diph.dwHow = DIPH_BYOFFSET
+                rng_ax.lMin = 0
+                rng_ax.lMax = 65535
+                _com_call(
+                    dev_ptr, 6, ctypes.c_ulong,
+                    [ctypes.c_void_p, ctypes.POINTER(DIPROPHEADER)],
+                    DIPROP_RANGE, ctypes.byref(rng_ax.diph)
+                )
 
         # SetCooperativeLevel = index 13 (hwnd=None + DISCL_BACKGROUND | DISCL_NONEXCLUSIVE funciona em background!)
         hr_cl = _com_call(

@@ -362,13 +362,18 @@ def start_axis_streamer():
                 "z": watcher.throttle_axes.get("z", 65535),
                 "rz": watcher.throttle_axes.get("rz", 65535),
                 "slider": watcher.throttle_axes.get("slider", 32767),
+                "slider2": watcher.throttle_axes.get("slider2", 32767),
+                "rty3": watcher.throttle_axes.get("rty3", 32767),
+                "rty4": watcher.throttle_axes.get("rty4", 32767),
                 "stick_x": watcher.stick_axes.get("x", 32767),
                 "stick_y": watcher.stick_axes.get("y", 32767),
                 "stick_rz": watcher.stick_axes.get("rz", 32767),
+                "stick_rx": watcher.stick_axes.get("rx", 32767),
+                "stick_ry": watcher.stick_axes.get("ry", 32767),
             }
             changed = False
             for k, v in cur.items():
-                if abs(v - prev_state.get(k, -9999)) > 250:
+                if abs(v - prev_state.get(k, -9999)) > 64:
                     changed = True
                     break
             if changed:
