@@ -33,6 +33,7 @@ class SwitchEngine:
         self.on_shift_change: Optional[Callable[[bool], None]] = None
         self.on_afterburner_change: Optional[Callable[[bool], None]] = None
         self.on_profile_cycle_requested: Optional[Callable[[], None]] = None
+        self.on_profile_select_requested: Optional[Callable[[str], None]] = None
 
         # Estado da Camada Shift (Pinky Lever - Botão 4 no Warthog, Botão 6 no Logitech X56)
         self.active_kit = "warthog"
@@ -352,6 +353,23 @@ class SwitchEngine:
         mods = m.get("modifiers") or []
         macro_id = str(m.get("macro_id", "")).strip()
         desc = m.get("desc") or info["desc"]
+
+        # Seletor Rotativo MODE do X56 (BTN 34 = M1, BTN 35 = M2, BTN 36 = S1):
+        # Fica continuamente premido enquanto selecionado — dispara apenas na entrada (is_down=True)!
+        # Se tiver tecla ou macro personalizada, executa-a; caso contrário troca o Perfil de Cockpit!
+        if button in (34, 35, 36):
+            if not is_down:
+                return
+            if key or macro_id:
+                self._dispatch_action(act_id, desc)
+                return
+            mode_profile_map = {34: ("combat", "MODE M1"), 35: ("mining", "MODE M2"), 36: ("cargo", "MODE S1")}
+            target_prof, mode_lbl = mode_profile_map[button]
+            if self.on_profile_select_requested:
+                self.on_profile_select_requested(target_prof)
+            if self.on_action_triggered:
+                self.on_action_triggered(act_id, mode_lbl, desc)
+            return
 
         # Teclas contínuas (Boost, Space Brake, Strafe) seguram a tecla enquanto o botão está premido,
         # EXCETO se o utilizador configurou explicitamente um impulso temporizado longo (hold_ms > 100ms).

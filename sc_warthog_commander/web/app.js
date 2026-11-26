@@ -927,6 +927,16 @@ const X56_STICK_VISUAL_GROUPS = [
 
 const X56_THROTTLE_VISUAL_GROUPS = [
   {
+    title: '🎚️ Seletor Rotativo MODE (M1 / M2 / S1) & Slide SLD',
+    color: 'amber',
+    items: [
+      { id: '34', actionId: 'X56_THR_34', num: 'BTN 34', name: 'MODE M1 (Seletor Modo 1)', desc: 'Troca p/ Perfil ⚔️ Combate (ou tecla/macro personalizada)' },
+      { id: '35', actionId: 'X56_THR_35', num: 'BTN 35', name: 'MODE M2 (Seletor Modo 2)', desc: 'Troca p/ Perfil ⛏️ Mineração (ou tecla/macro personalizada)' },
+      { id: '36', actionId: 'X56_THR_36', num: 'BTN 36', name: 'MODE S1 (Seletor Modo 3)', desc: 'Troca p/ Perfil 📦 Carga (ou tecla/macro personalizada)' },
+      { id: '33', actionId: 'X56_THR_33', num: 'BTN 33', name: 'SLD (Slide Switch Cinzento)', desc: 'Alternar Quantum / NAV (B)' }
+    ]
+  },
+  {
     title: '🕹️ Punho da Manete X56 (Botões E / F / G / I / H / K1 / Scroll)',
     color: 'amber',
     items: [
@@ -939,7 +949,7 @@ const X56_THROTTLE_VISUAL_GROUPS = [
       { id: '29', actionId: 'X56_THR_29', num: 'BTN 29', name: 'K1 Baixo (Rocker)', desc: 'Reset Salva de Mísseis (Alt+G)' },
       { id: '30', actionId: 'X56_THR_30', num: 'BTN 30', name: 'Scroll Frente', desc: 'Aumentar Limite Veloc./Laser (Wheel Up)' },
       { id: '31', actionId: 'X56_THR_31', num: 'BTN 31', name: 'Scroll Trás', desc: 'Diminuir Limite Veloc./Laser (Wheel Dn)' },
-      { id: '32', actionId: 'X56_THR_32', num: 'BTN 32', name: 'SLD / Mini-Stick Push', desc: 'Push-to-Talk VOIP (Num +)' }
+      { id: '32', actionId: 'X56_THR_32', num: 'BTN 32', name: 'Mini-Stick Push', desc: 'Push-to-Talk VOIP (Num +)' }
     ]
   },
   {
@@ -1158,7 +1168,11 @@ const X56_COORDINATES = {
     '29': { x: 67.5, y: 34.0, num: 'BTN 29', name: 'K1 Baixo' },
     '30': { x: 33.0, y: 17.0, num: 'BTN 30', name: 'Scroll Frente' },
     '31': { x: 33.0, y: 20.0, num: 'BTN 31', name: 'Scroll Trás' },
-    '32': { x: 77.5, y: 26.8, num: 'BTN 32', name: 'SLD / Mini-Stick Push' },
+    '32': { x: 77.5, y: 34.5, num: 'BTN 32', name: 'Mini-Stick Push' },
+    '33': { x: 77.5, y: 26.8, num: 'BTN 33', name: 'SLD (Slide Switch Cinzento)' },
+    '34': { x: 22.5, y: 65.0, num: 'BTN 34', name: 'MODE M1 (Modo 1 / Combate)' },
+    '35': { x: 22.5, y: 67.8, num: 'BTN 35', name: 'MODE M2 (Modo 2 / Mineração)' },
+    '36': { x: 21.0, y: 70.2, num: 'BTN 36', name: 'MODE S1 (Modo 3 / Carga)' },
     'ax-EIXO_X':     { x: 40.0, y: 25.0, num: 'EIXO X', name: 'Alavanca Esq. (js2_x)' },
     'ax-EIXO_Y':     { x: 60.0, y: 25.0, num: 'EIXO Y', name: 'Alavanca Dir. (js2_y)' },
     'ax-SLIDER_1':   { x: 84.5, y: 14.5, num: 'SLIDER 1', name: 'Rotativo F (js2_slider1)' },
@@ -1749,12 +1763,19 @@ function updateHatUI(data) {
 }
 
 function applyInitialThrottleState(data) {
-  const mask = data.buttons_mask || 0;
-  for (let b = 1; b <= 32; b++) {
-    const pressed = Boolean(mask & (1 << (b - 1)));
-    if (pressed) {
+  if (Array.isArray(data.active_buttons)) {
+    for (const b of data.active_buttons) {
       updateSwitchUI({ device: 'throttle', button: b, is_down: true }, true);
       highlightCatalogButton('throttle', b, true);
+    }
+  } else {
+    const mask = data.buttons_mask || 0;
+    for (let b = 1; b <= 32; b++) {
+      const pressed = Boolean(mask & (1 << (b - 1)));
+      if (pressed) {
+        updateSwitchUI({ device: 'throttle', button: b, is_down: true }, true);
+        highlightCatalogButton('throttle', b, true);
+      }
     }
   }
   if (data.pov) {

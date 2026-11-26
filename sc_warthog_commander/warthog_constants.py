@@ -284,7 +284,11 @@ DEFAULT_SC_MAPPINGS = {
     "X56_THR_29": {"key": "G", "modifiers": ["ALT"], "desc": "K1 Baixo (BTN 29): Reset Salva de Mísseis (Alt+G)", "hold_ms": 60},
     "X56_THR_30": {"key": "MWHEEL_UP", "modifiers": [], "desc": "Scroll Frente (BTN 30): Aumentar Limite Veloc./Laser", "hold_ms": 40},
     "X56_THR_31": {"key": "MWHEEL_DOWN", "modifiers": [], "desc": "Scroll Trás (BTN 31): Diminuir Limite Veloc./Laser", "hold_ms": 40},
-    "X56_THR_32": {"key": "NUM_ADD", "modifiers": [], "desc": "SLD / Mini-Stick Push (BTN 32): VOIP Push-to-Talk (Num +)", "hold_ms": 60},
+    "X56_THR_32": {"key": "NUM_ADD", "modifiers": [], "desc": "Mini-Stick Push (BTN 32): VOIP Push-to-Talk (Num +)", "hold_ms": 60},
+    "X56_THR_33": {"key": "B", "modifiers": [], "desc": "SLD Slide Switch (BTN 33): Alternar Quantum / NAV (B)", "hold_ms": 80},
+    "X56_THR_34": {"key": "", "modifiers": [], "desc": "MODE M1 (BTN 34): Perfil ⚔️ Combate (ou tecla/macro personalizada)", "hold_ms": 60},
+    "X56_THR_35": {"key": "", "modifiers": [], "desc": "MODE M2 (BTN 35): Perfil ⛏️ Mineração (ou tecla/macro personalizada)", "hold_ms": 60},
+    "X56_THR_36": {"key": "", "modifiers": [], "desc": "MODE S1 (BTN 36): Perfil 📦 Carga (ou tecla/macro personalizada)", "hold_ms": 60},
 }
 
 # Catálogo descritivo de hardware para Logitech G / Saitek X56 Rhino
@@ -340,5 +344,9 @@ X56_THROTTLE_BUTTONS = {
     29: {"name": "K1 Baixo (Rocker Punho)", "desc": "Reset Salva de Mísseis (Alt+G)"},
     30: {"name": "Scroll Frente (Roda)", "desc": "Aumentar Limite Veloc./Laser"},
     31: {"name": "Scroll Trás (Roda)", "desc": "Diminuir Limite Veloc./Laser"},
-    32: {"name": "SLD / Mini-Stick Push", "desc": "VOIP Push-to-Talk (Num +)"},
+    32: {"name": "Mini-Stick Push", "desc": "VOIP Push-to-Talk (Num +)"},
+    33: {"name": "SLD (Slide Switch)", "desc": "Interruptor Deslizante Cinzento"},
+    34: {"name": "MODE M1 (Seletor Modo 1)", "desc": "Selecionar Modo 1 / Perfil ⚔️ Combate"},
+    35: {"name": "MODE M2 (Seletor Modo 2)", "desc": "Selecionar Modo 2 / Perfil ⛏️ Mineração"},
+    36: {"name": "MODE S1 (Seletor Modo 3)", "desc": "Selecionar Modo S1 / Perfil 📦 Carga"},
 }

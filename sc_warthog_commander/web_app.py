@@ -320,6 +320,23 @@ def on_profile_cycle_requested():
     })
 
 
+def on_profile_select_requested(profile_id: str):
+    """Seleciona diretamente um perfil de atividade (usado pelo seletor rotativo MODE M1/M2/S1 do X56)."""
+    pdata = apply_and_persist_profile(profile_id)
+    actual_pid = profile_mgr.active_profile_id
+    broadcast_threadsafe({
+        "type": "profile_changed",
+        "profile_id": actual_pid,
+        "profile_data": pdata
+    })
+    broadcast_threadsafe({
+        "type": "log",
+        "timestamp": time.strftime("%H:%M:%S"),
+        "text": f"[X56 MODE] Perfil selecionado: {pdata['name']}",
+        "key_hit": f"{pdata['icon']} {pdata.get('highlights', '')}"
+    })
+
+
 watcher.on_button_change = on_hardware_button
 watcher.on_hat_change = on_hardware_hat
 watcher.on_axis_change = on_hardware_axis
@@ -329,6 +346,7 @@ engine.on_action_triggered = on_action_triggered
 engine.on_shift_change = on_shift_change
 engine.on_afterburner_change = on_afterburner_change
 engine.on_profile_cycle_requested = on_profile_cycle_requested
+engine.on_profile_select_requested = on_profile_select_requested
 led_controller.on_state_change = on_led_state_change
 sc_monitor.on_state_change = on_sc_process_change
 
@@ -412,9 +430,10 @@ async def websocket_endpoint(websocket: WebSocket):
 
     await websocket.send_text(json.dumps({
         "type": "initial_throttle_state",
-        "buttons_mask": watcher.prev_throttle_buttons,
+        "buttons_mask": watcher.prev_throttle_buttons & 0xFFFFFFFF,
+        "active_buttons": [b for b in range(1, 41) if watcher.prev_throttle_buttons & (1 << (b - 1))],
         "pov": watcher.prev_throttle_pov,
-        "stick_buttons_mask": watcher.prev_stick_buttons,
+        "stick_buttons_mask": watcher.prev_stick_buttons & 0xFFFFFFFF,
         "stick_pov": watcher.prev_stick_pov
     }))
 
