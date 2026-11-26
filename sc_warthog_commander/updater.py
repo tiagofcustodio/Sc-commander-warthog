@@ -22,10 +22,19 @@ from typing import Optional, Tuple
 
 from config import get_app_dir
 
-APP_VERSION = "5.9.0"
+APP_VERSION = "5.9.1"
 APP_DIR = get_app_dir()
 BACKUP_DIR = os.path.join(APP_DIR, "backups")
 STATE_FILE = os.path.join(APP_DIR, "update_state.json")
+LOG_FILE = os.path.join(APP_DIR, "update_log.txt")
+
+
+def _log_update(msg: str):
+    try:
+        with open(LOG_FILE, "a", encoding="utf-8") as f:
+            f.write(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] {msg}\n")
+    except Exception:
+        pass
 
 DEFAULT_UPDATE_REPO = "tiagofcustodio/Sc-commander-warthog"
 EXE_REPO_PATH = "dist/SC_Warthog_Commander.exe"
@@ -137,11 +146,20 @@ def _check_frozen_exe_github_commit(repo_slug: str, now_str: str) -> Optional[di
     except Exception:
         local_blob_sha = ""
 
-    # 1. Consulta metadados do ficheiro no branch main (devolve Git Blob SHA-1 exato + download_url)
-    contents_url = f"https://api.github.com/repos/{repo}/contents/{EXE_REPO_PATH}?ref=main"
-    meta = _github_get_json(contents_url, timeout=10)
+    # 1. Lista a pasta dist/ no branch main (nunca falha no limite de 1MB da GitHub Contents API)
+    dir_url = f"https://api.github.com/repos/{repo}/contents/dist?ref=main"
+    entries = _github_get_json(dir_url, timeout=10)
+    meta = {}
+    if isinstance(entries, list):
+        for item in entries:
+            if str(item.get("name", "")).lower() == "sc_warthog_commander.exe":
+                meta = item
+                break
+    elif isinstance(entries, dict):
+        meta = entries
     remote_blob_sha = str(meta.get("sha") or "").strip()
-    dl_url = str(meta.get("download_url") or f"https://github.com/{repo}/raw/main/{EXE_REPO_PATH}")
+    dl_url = str(meta.get("download_url") or f"https://raw.githubusercontent.com/{repo}/main/{EXE_REPO_PATH}")
+    _log_update(f"Check commit: local={local_blob_sha[:10]} remote={remote_blob_sha[:10]} url={dl_url}")
 
     # 2. Obtém a mensagem e SHA curto do último commit que alterou o .exe
     commit_sha = remote_blob_sha[:8]

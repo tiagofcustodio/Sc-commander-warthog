@@ -548,6 +548,10 @@ function handleServerMessage(data) {
 
     case 'config':
       populateConfig(data.config);
+      if (data.config && data.config.app_version) {
+        const hv = document.getElementById('app-version-tag');
+        if (hv) hv.textContent = 'UEE // MIL-GLASS v' + data.config.app_version;
+      }
       break;
 
     case 'mapping_updated':
@@ -3177,6 +3181,8 @@ function applyGitHubConfig(cfg) {
   if (!cfg) return;
   const verEl = document.getElementById('gh-current-version');
   if (verEl && cfg.app_version) verEl.textContent = 'v' + cfg.app_version;
+  const headerVerEl = document.getElementById('app-version-tag');
+  if (headerVerEl && cfg.app_version) headerVerEl.textContent = 'UEE // MIL-GLASS v' + cfg.app_version;
   const repoEl = document.getElementById('gh-input-repo');
   const branchEl = document.getElementById('gh-input-branch');
   const autoEl = document.getElementById('gh-chk-autocheck');

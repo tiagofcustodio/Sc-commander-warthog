@@ -81,6 +81,15 @@ async def get_js():
     return FileResponse(os.path.join(WEB_DIR, "app.js"), headers={"Cache-Control": "no-store"})
 
 
+@app.get("/api/version")
+async def get_version():
+    return {
+        "version": APP_VERSION,
+        "frozen": bool(getattr(sys, "frozen", False)),
+        "update_info": latest_update_info,
+    }
+
+
 @app.get("/favicon.ico")
 async def get_favicon():
     ico_path = os.path.join(WEB_DIR, "app_icon.ico")
@@ -419,6 +428,7 @@ async def websocket_endpoint(websocket: WebSocket):
         "type": "config",
         "config": {
             **config,
+            "app_version": APP_VERSION,
             "active_profile": profile_mgr.active_profile_id,
             "mappings": engine.mappings
         }
@@ -834,8 +844,57 @@ def open_desktop_window():
         webbrowser.open(url)
 
 
+def _terminate_previous_instances():
+    """
+    Garante instância única na porta 8765: se existir uma versão antiga do
+    SC_Warthog_Commander.exe ainda aberta na System Tray a segurar a porta 8765,
+    encerra-a antes de iniciar o novo servidor para nunca mostrar uma versão velha!
+    """
+    try:
+        import psutil
+        my_pid = os.getpid()
+        parent_pid = os.getppid()
+        my_exe_name = os.path.basename(sys.executable).lower() if getattr(sys, "frozen", False) else ""
+
+        # 1. Encerra processos anteriores com o mesmo nome .exe (preserva PID atual e bootloader pai)
+        if my_exe_name and my_exe_name not in ("python.exe", "pythonw.exe"):
+            for proc in psutil.process_iter(["pid", "name"]):
+                try:
+                    pid = proc.info["pid"]
+                    if pid in (my_pid, parent_pid):
+                        continue
+                    if (proc.info.get("name") or "").lower() == my_exe_name:
+                        proc.terminate()
+                        try:
+                            proc.wait(timeout=2.0)
+                        except Exception:
+                            proc.kill()
+                except Exception:
+                    pass
+
+        # 2. Se outro processo Python antigo ainda estiver a segurar a porta 8765, liberta-a
+        for conn in psutil.net_connections(kind="inet"):
+            try:
+                if conn.laddr and conn.laddr.port == PORT and conn.status == psutil.CONN_LISTEN:
+                    pid = conn.pid
+                    if pid and pid not in (my_pid, parent_pid):
+                        p = psutil.Process(pid)
+                        pname = (p.name() or "").lower()
+                        if "warthog" in pname or "python" in pname:
+                            p.terminate()
+                            try:
+                                p.wait(timeout=2.0)
+                            except Exception:
+                                p.kill()
+            except Exception:
+                pass
+    except Exception:
+        pass
+
+
 def run_glassmorphism_app():
     """Inicia os subsistemas, gera o perfil XML atualizado e abre o Dashboard."""
+    _terminate_previous_instances()
     sc_live = find_sc_live_dir(config.get("star_citizen_live_path"))
     s_found, t_found = watcher.scan_devices()
     startup_kit = watcher.detected_kit if (s_found is not None or t_found is not None) else config.get("selected_hotas_kit", "warthog")
