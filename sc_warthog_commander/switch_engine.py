@@ -9,7 +9,7 @@ Duplo Detentor Idle Cutoff (Botões 29/30), Detetor de Pós-Combustão e Sincron
 import time
 import threading
 from typing import Callable, Optional
-from warthog_constants import STICK_BUTTONS, THROTTLE_BUTTONS
+from warthog_constants import STICK_BUTTONS, THROTTLE_BUTTONS, X56_STICK_BUTTONS, X56_THROTTLE_BUTTONS
 from input_sender import send_key_pulse, send_key_state
 from warthog_leds import WarthogLEDController
 
@@ -176,6 +176,12 @@ class SwitchEngine:
                             self.on_action_triggered(act_id, f"{mod_str}{default_key}", f"[SHIFT] {default_desc}")
                     return
 
+            if self.active_kit == "saitek_x56":
+                info = X56_STICK_BUTTONS.get(button, {"name": f"X56 BTN {button}", "desc": f"Botão Stick {button}"})
+                act_id = f"X56_STK_{button}"
+                self._handle_dual_action(f"x56_stk_{button}", is_down, act_id, info["desc"], fallback_name=info["name"])
+                return
+
             if button in STICK_BUTTONS:
                 info = STICK_BUTTONS[button]
                 act_id = f"STICK_BTN_{button}"
@@ -183,9 +189,16 @@ class SwitchEngine:
             return
 
         # ======================================================================
-        # 2. MANETE DUPLA (THROTTLE - Botões 1 a 32 segundo VID_044F&PID_0404.dev)
+        # 2. MANETE DUPLA (THROTTLE)
         # ======================================================================
         if device != "throttle":
+            return
+
+        # --- LOGITECH G / SAITEK X56 RHINO THROTTLE (Botões 1..32 Momentâneos / Toggles c/ Mola) ---
+        # IMPORTANTE: No X56 todos os switches SW 1-6, TGL 1-4 e Hats H3/H4 regressam ao centro por mola!
+        # Nunca devem passar pela lógica de toggles fixos 2-way/3-way do Warthog (senão disparam 2x ao largar!).
+        if self.active_kit == "saitek_x56":
+            self._handle_x56_throttle_button(button, is_down)
             return
 
         # --- A. DETENTORES FÍSICOS IDLE CUTOFF (Apenas Thrustmaster Warthog: Botões 29 e 30) ---
@@ -323,6 +336,38 @@ class SwitchEngine:
             elif is_down and button in THROTTLE_BUTTONS and self.on_action_triggered:
                 info = THROTTLE_BUTTONS[button]
                 self.on_action_triggered(f"THROTTLE_BTN_{button}", info["name"], info["desc"])
+
+    def _handle_x56_throttle_button(self, button: int, is_down: bool):
+        """
+        Processamento dedicado para Logitech G / Saitek X56 Rhino Throttle (Botões 1..32).
+        - Disparo limpo apenas ao premir (sem duplo-disparo ao soltar os switches SW/TGL com mola!).
+        - Suporte contínuo (Hold) automático para teclas de voo mantidas (Boost LShift, Space Brake X, Strafe WASD/Space/Ctrl)
+          quando não há ação de pressão longa nem macro configurada.
+        - Suporte total a Ação Dupla (Tap Curto vs Pressão Longa) e Macros em todos os 32 botões.
+        """
+        act_id = f"X56_THR_{button}"
+        info = X56_THROTTLE_BUTTONS.get(button, {"name": f"X56 THR {button}", "desc": f"Botão Manete {button}"})
+        m = self.mappings.get(act_id) or {}
+        key = str(m.get("key", "")).strip()
+        mods = m.get("modifiers") or []
+        macro_id = str(m.get("macro_id", "")).strip()
+        desc = m.get("desc") or info["desc"]
+
+        # Teclas contínuas (Boost, Space Brake, Strafe) seguram a tecla enquanto o botão está premido
+        holdable_keys = {"LSHIFT", "RSHIFT", "X", "SPACE", "LCTRL", "A", "D", "S", "W"}
+        if key.upper() in holdable_keys and not mods and not macro_id and not self._has_long_press(act_id):
+            send_key_state(key, is_down)
+            if is_down and self.on_action_triggered:
+                self.on_action_triggered(act_id, f"{key} (HOLD)", desc)
+            return
+
+        self._handle_dual_action(
+            f"x56_thr_{button}",
+            is_down,
+            act_id,
+            desc,
+            fallback_name=info["name"]
+        )
 
     def update_macros(self, macros: dict):
         """Atualiza o dicionário de macros ativas."""

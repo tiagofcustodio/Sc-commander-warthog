@@ -345,11 +345,11 @@ def fix_actionmaps(xml_path: str, fix_roll_pitch: bool = True) -> Tuple[bool, st
         if is_x56:
             # Logitech G / Saitek X56 Rhino:
             # Stick possui Twist Yaw (js1_rotz); Throttle usa X/Y para as duas alavancas,
-            # Z para o rotativo F (Speed Limiter) e rotx/roty para o mini-stick do polegar!
+            # slider1 para o rotativo F no polegar (Speed Limiter) e rotx/roty para o mini-stick do polegar!
             _set_action_rebind(am_mov, "v_yaw", "js1_rotz")
             _set_action_rebind(am_mov, "v_strafe_longitudinal", "js2_x")
             _set_action_rebind(am_mov, "v_throttle_abs", "js2_y")
-            _set_action_rebind(am_mov, "v_speed_range_abs", "js2_z")
+            _set_action_rebind(am_mov, "v_speed_range_abs", "js2_slider1")
             _set_action_rebind(am_mov, "v_strafe_lateral", "js2_rotx")
             _set_action_rebind(am_mov, "v_strafe_vertical", "js2_roty")
         else:

@@ -139,6 +139,7 @@ engine = SwitchEngine(
     led_controller=led_controller,
     macros=config.get("macros", {})
 )
+engine.set_active_kit(config.get("selected_hotas_kit", "warthog"))
 engine.afterburner_enabled = False
 
 main_event_loop: asyncio.AbstractEventLoop = None
@@ -336,6 +337,7 @@ def start_axis_streamer():
                 "slider": watcher.throttle_axes.get("slider", 32767),
                 "stick_x": watcher.stick_axes.get("x", 32767),
                 "stick_y": watcher.stick_axes.get("y", 32767),
+                "stick_rz": watcher.stick_axes.get("rz", 32767),
             }
             changed = False
             for k, v in cur.items():
@@ -631,13 +633,8 @@ async def websocket_endpoint(websocket: WebSocket):
                 if kit_id in HOTAS_KITS_META:
                     config["selected_hotas_kit"] = kit_id
                     save_config(config)
-                    await hub.broadcast({
-                        "type": "hotas_info",
-                        "kits": HOTAS_KITS_META,
-                        "selected_kit": kit_id,
-                        "detected_kit": watcher.detected_kit,
-                        "detected_devices": watcher.detected_devices
-                    })
+                    engine.set_active_kit(kit_id)
+                    await hub.broadcast(_build_hotas_info_payload(auto_switch=False))
                     await hub.broadcast({
                         "type": "log",
                         "timestamp": time.strftime("%H:%M:%S"),
@@ -717,7 +714,8 @@ async def websocket_endpoint(websocket: WebSocket):
             elif msg_type == "install_profile":
                 if sc_live:
                     m_dir = get_mappings_dir(sc_live)
-                    success, msg = write_profile_to_sc(m_dir)
+                    active_kit = watcher.detected_kit if (watcher.stick_slot is not None or watcher.throttle_slot is not None) else config.get("selected_hotas_kit", "warthog")
+                    success, msg = write_profile_to_sc(m_dir, kit_id=active_kit)
                     await hub.broadcast({
                         "type": "log",
                         "timestamp": time.strftime("%H:%M:%S"),
@@ -744,6 +742,8 @@ async def websocket_endpoint(websocket: WebSocket):
 
             elif msg_type == "rescan_hardware":
                 watcher.stick_slot, watcher.throttle_slot = watcher.scan_devices()
+                if watcher.stick_slot is not None or watcher.throttle_slot is not None:
+                    engine.set_active_kit(watcher.detected_kit)
                 await hub.broadcast({
                     "type": "device_status",
                     "stick": watcher.stick_slot is not None,
@@ -837,8 +837,11 @@ def open_desktop_window():
 def run_glassmorphism_app():
     """Inicia os subsistemas, gera o perfil XML atualizado e abre o Dashboard."""
     sc_live = find_sc_live_dir(config.get("star_citizen_live_path"))
+    watcher.scan_devices()
+    startup_kit = watcher.detected_kit if (watcher.stick_slot is not None or watcher.throttle_slot is not None) else config.get("selected_hotas_kit", "warthog")
+    engine.set_active_kit(startup_kit)
     if sc_live:
-        write_profile_to_sc(get_mappings_dir(sc_live))
+        write_profile_to_sc(get_mappings_dir(sc_live), kit_id=startup_kit)
         # Tenta aplicar reparação automática se tiver permissões de escrita
         xml_p = get_actionmaps_path(sc_live)
         diag = diagnose_actionmaps(xml_p)

@@ -478,14 +478,191 @@ def generate_warthog_xml_content() -> str:
 """
 
 
-def write_profile_to_sc(mappings_dir: str) -> tuple[bool, str]:
+def generate_x56_xml_content() -> str:
+    """Retorna a string XML completa otimizada para Logitech G / Saitek X56 Rhino no Star Citizen 4.x."""
+    return """<ActionMaps version="1" optionsVersion="2" rebindVersion="2" profileName="Logitech_X56_SC_Commander_Pro">
+  <CustomisationUIHeader label="Logitech_X56_SC_Commander_Pro" description="Perfil Completo Logitech G / Saitek X56 Rhino (Stick 17B + Twist Yaw + Throttle 32B Dual X/Y)" image="">
+    <devices>
+      <keyboard instance="1"/>
+      <mouse instance="1"/>
+      <joystick instance="1"/>
+      <joystick instance="2"/>
+    </devices>
+    <categories>
+      <category label="@ui_CCSeatGeneral"/>
+      <category label="@ui_CCSpaceFlight"/>
+      <category label="@ui_CCTurrets"/>
+      <category label="@ui_CCLightControllerDesc"/>
+      <category label="@ui_CCVehicle"/>
+      <category label="@ui_CCEA_Interactive"/>
+    </categories>
+  </CustomisationUIHeader>
+
+  <!-- Joystick 1 = Logitech/Saitek X56 Stick (PID 2221) | Joystick 2 = X56 Throttle (PID A221) -->
+  <deviceoptions name="Saitek Pro Flight X-56 Rhino Stick  {22210738-0000-0000-0000-504944564944}">
+    <option input="x" deadzone="0.025"/>
+    <option input="y" deadzone="0.025"/>
+    <option input="rotz" deadzone="0.04"/>
+  </deviceoptions>
+  <deviceoptions name="Saitek Pro Flight X-56 Rhino Throttle  {A2210738-0000-0000-0000-504944564944}">
+    <option input="rotx" deadzone="0.06"/>
+    <option input="roty" deadzone="0.06"/>
+  </deviceoptions>
+
+  <options type="keyboard" instance="1" Product="Keyboard  {6F1D2B61-D5A0-11CF-BFC7-444553540000}"/>
+  <options type="mouse" instance="1" Product="Mouse  {6F1D2B60-D5A0-11CF-BFC7-444553540000}"/>
+  <options type="joystick" instance="1" Product="Saitek Pro Flight X-56 Rhino Stick  {22210738-0000-0000-0000-504944564944}">
+    <flight_move_pitch exponent="1.5"/>
+    <flight_move_roll exponent="1.5"/>
+    <flight_move_yaw exponent="1.6"/>
+  </options>
+  <options type="joystick" instance="2" Product="Saitek Pro Flight X-56 Rhino Throttle  {A2210738-0000-0000-0000-504944564944}">
+    <flight_move_strafe_vertical invert="1" exponent="1.5"/>
+    <flight_move_strafe_lateral exponent="1.5"/>
+    <flight_strafe_longitudinal invert="1" exponent="1.0"/>
+    <flight_throttle_abs invert="1" exponent="1.0"/>
+    <flight_move_speed_range_abs invert="1"/>
+  </options>
+
+  <modifiers />
+
+  <actionmap name="seat_general">
+    <action name="v_toggle_quantum_mode">
+      <rebind input="js1_button4" activationMode="hold"/>
+    </action>
+    <action name="v_toggle_scan_mode">
+      <rebind input="js2_button20"/>
+    </action>
+    <action name="v_toggle_mining_mode">
+      <rebind input="js2_button22"/>
+    </action>
+  </actionmap>
+
+  <actionmap name="spaceship_movement">
+    <action name="v_pitch">
+      <rebind input="js1_y"/>
+    </action>
+    <action name="v_roll">
+      <rebind input="js1_x"/>
+    </action>
+    <action name="v_yaw">
+      <rebind input="js1_rotz"/>
+    </action>
+    <action name="v_strafe_longitudinal">
+      <rebind input="js2_x"/>
+    </action>
+    <action name="v_throttle_abs">
+      <rebind input="js2_y"/>
+    </action>
+    <action name="v_speed_range_abs">
+      <rebind input="js2_slider1"/>
+    </action>
+    <action name="v_ifcs_speed_limiter_rel">
+      <rebind input="js2_ "/>
+    </action>
+    <action name="v_strafe_lateral">
+      <rebind input="js2_rotx"/>
+    </action>
+    <action name="v_strafe_vertical">
+      <rebind input="js2_roty"/>
+    </action>
+    <action name="v_afterburner">
+      <rebind input="js2_button1"/>
+    </action>
+    <action name="v_ifcs_toggle_cruise_control">
+      <rebind input="js2_button2"/>
+    </action>
+    <action name="v_space_brake">
+      <rebind input="js2_button3"/>
+    </action>
+    <action name="v_strafe_longitudinal_invert">
+      <rebind input="js2_button4"/>
+    </action>
+    <action name="v_ifcs_toggle_vector_decoupling">
+      <rebind input="js1_button5"/>
+    </action>
+    <action name="v_toggle_landing_system">
+      <rebind input="js2_button12"/>
+    </action>
+    <action name="v_toggle_vtol">
+      <rebind input="js2_button14"/>
+    </action>
+  </actionmap>
+
+  <actionmap name="spaceship_weapons">
+    <action name="v_attack_group1">
+      <rebind input="js1_button1"/>
+    </action>
+    <action name="v_attack_group2">
+      <rebind input="js1_button3"/>
+    </action>
+  </actionmap>
+
+  <actionmap name="spaceship_missiles">
+    <action name="v_weapon_launch_missile">
+      <rebind input="js1_button2"/>
+    </action>
+  </actionmap>
+
+  <actionmap name="spaceship_targeting">
+    <action name="v_target_lock_selected">
+      <rebind input="js1_button7"/>
+    </action>
+    <action name="v_target_cycle_hostile_fwd">
+      <rebind input="js1_button8"/>
+    </action>
+    <action name="v_target_cycle_hostile_reset">
+      <rebind input="js1_button9"/>
+    </action>
+    <action name="v_target_cycle_all_fwd">
+      <rebind input="js1_button10"/>
+    </action>
+  </actionmap>
+
+  <actionmap name="spaceship_defensive">
+    <action name="v_weapon_countermeasure_noise_launch">
+      <rebind input="js1_button12"/>
+    </action>
+    <action name="v_weapon_countermeasure_decoy_launch">
+      <rebind input="js1_button13"/>
+    </action>
+  </actionmap>
+
+  <actionmap name="spaceship_radar">
+    <action name="v_invoke_ping">
+      <rebind input="js1_button11"/>
+    </action>
+  </actionmap>
+
+  <actionmap name="spaceship_power">
+    <action name="v_capacitor_assignment_engine_combined_increase_max">
+      <rebind input="js1_hat1_up"/>
+    </action>
+    <action name="v_capacitor_assignment_shield_combined_increase_max">
+      <rebind input="js1_hat1_right"/>
+    </action>
+    <action name="v_capacitor_assignment_reset">
+      <rebind input="js1_hat1_down"/>
+    </action>
+    <action name="v_capacitor_assignment_weapon_combined_increase_max">
+      <rebind input="js1_hat1_left"/>
+    </action>
+  </actionmap>
+</ActionMaps>
+"""
+
+
+def write_profile_to_sc(mappings_dir: str, kit_id: str = "warthog") -> tuple[bool, str]:
     """Escreve o perfil completo na pasta mappings do Star Citizen e mantém uma cópia local."""
-    content = generate_warthog_xml_content()
+    is_x56 = (kit_id == "saitek_x56")
+    content = generate_x56_xml_content() if is_x56 else generate_warthog_xml_content()
+    profile_stem = "layout_x56_sc_fixed" if is_x56 else "layout_warthog_sc_fixed"
+    filename = f"{profile_stem}.xml"
 
     from config import get_app_dir
     local_profiles_dir = os.path.join(get_app_dir(), "profiles")
     os.makedirs(local_profiles_dir, exist_ok=True)
-    local_file = os.path.join(local_profiles_dir, "layout_warthog_sc_fixed.xml")
+    local_file = os.path.join(local_profiles_dir, filename)
     try:
         with open(local_file, "w", encoding="utf-8") as f:
             f.write(content)
@@ -495,19 +672,19 @@ def write_profile_to_sc(mappings_dir: str) -> tuple[bool, str]:
     try:
         if not os.path.exists(mappings_dir):
             os.makedirs(mappings_dir, exist_ok=True)
-        target_file = os.path.join(mappings_dir, "layout_warthog_sc_fixed.xml")
+        target_file = os.path.join(mappings_dir, filename)
         with open(target_file, "w", encoding="utf-8") as f:
             f.write(content)
         return True, (
-            f"✅ Perfil Completo gravado diretamente no Star Citizen:\n{target_file}\n\n"
-            "No jogo, também podes carregar via consola (~):\npp_rebindkeys layout_warthog_sc_fixed"
+            f"✅ Perfil Completo ({'Logitech G X56 Rhino' if is_x56 else 'HOTAS Warthog'}) gravado no Star Citizen:\n{target_file}\n\n"
+            f"No jogo, carrega via consola (~):\npp_rebindkeys {profile_stem}"
         )
     except PermissionError:
         return False, (
             "Permissão de Administrador necessária para gravar em 'C:\\Program Files\\...'.\n\n"
             "✅ Uma cópia atualizada foi gerada em:\n"
             f"'{local_file}'\n\n"
-            "O run.bat pede agora automaticamente privilégios de Administrador ao iniciar!"
+            "Executa o programa como Administrador para gravar diretamente na pasta do Star Citizen."
         )
     except Exception as e:
         return False, f"Erro ao gravar perfil: {e}"

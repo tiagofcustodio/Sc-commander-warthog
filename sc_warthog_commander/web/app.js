@@ -864,6 +864,134 @@ const THROTTLE_VISUAL_GROUPS = [
   }
 ];
 
+// ==============================================================================
+// LOGITECH G / SAITEK X56 RHINO — GRUPOS E BOTÕES REAIS DO VISUAL MAP
+// ==============================================================================
+const X56_STICK_VISUAL_GROUPS = [
+  {
+    title: '🎯 Gatilho, Botões Principais & Pinky Lever (X56 Stick)',
+    color: 'cyan',
+    items: [
+      { id: '1', actionId: 'X56_STK_1', num: 'BTN 01', name: 'Trigger (Gatilho)', desc: 'Disparo Primário Armas Grupo 1 (Nativo SC)' },
+      { id: '2', actionId: 'X56_STK_2', num: 'BTN 02', name: 'Botão A (Topo)', desc: 'Travar e Lançar Mísseis (Nativo SC)' },
+      { id: '3', actionId: 'X56_STK_3', num: 'BTN 03', name: 'Botão B (Lateral Polegar)', desc: 'Alternar Gimbal / Armas Grupo 2 (Nativo SC)' },
+      { id: '4', actionId: 'X56_STK_4', num: 'BTN 04', name: 'Botão C (C-Stick Push)', desc: 'Alternar Master Mode SCM / NAV (B)' },
+      { id: '5', actionId: 'X56_STK_5', num: 'BTN 05', name: 'Botão D (Polegar Inferior)', desc: 'Alternar Voo Decoupled (Alt+C)' },
+      { id: '6', actionId: 'X56_STK_6', num: 'BTN 06', name: 'Pinky Lever (Alavanca Metálica)', desc: '⚡ SHIFT LAYER GLOBAL (Segurar para 2ª camada)', special: 'amber' }
+    ]
+  },
+  {
+    title: '🧭 POV Hat Superior (8-Way — Capacitores)',
+    color: 'cyan',
+    items: [
+      { hatDir: 'up', actionId: 'TRIM_HAT_UP', num: 'POV ▲', name: 'POV Hat Cima', desc: 'Capacitores: Energia Propulsores (F6)' },
+      { hatDir: 'right', actionId: 'TRIM_HAT_RIGHT', num: 'POV ▶', name: 'POV Hat Direita', desc: 'Capacitores: Energia Escudos (F7)' },
+      { hatDir: 'down', actionId: 'TRIM_HAT_DOWN', num: 'POV ▼', name: 'POV Hat Baixo', desc: 'Capacitores: Equilibrar Energia (F8)' },
+      { hatDir: 'left', actionId: 'TRIM_HAT_LEFT', num: 'POV ◀', name: 'POV Hat Esquerda', desc: 'Capacitores: Energia Armas (F5)' }
+    ]
+  },
+  {
+    title: '🎯 H1 Hat (Alvos & Combate)',
+    color: 'cyan',
+    items: [
+      { id: '7', actionId: 'X56_STK_7', num: 'BTN 07', name: 'H1 Cima', desc: 'Selecionar Alvo sob a Mira (T)' },
+      { id: '8', actionId: 'X56_STK_8', num: 'BTN 08', name: 'H1 Direita', desc: 'Próximo Alvo Hostil (5)' },
+      { id: '9', actionId: 'X56_STK_9', num: 'BTN 09', name: 'H1 Baixo', desc: 'Alvo Hostil Mais Próximo (4)' },
+      { id: '10', actionId: 'X56_STK_10', num: 'BTN 10', name: 'H1 Esquerda', desc: 'Próximo Alvo Geral (7)' }
+    ]
+  },
+  {
+    title: '🛡️ H2 Hat (Radar & Contramedidas)',
+    color: 'cyan',
+    items: [
+      { id: '11', actionId: 'X56_STK_11', num: 'BTN 11', name: 'H2 Cima', desc: 'Ping de Radar (Tab)' },
+      { id: '12', actionId: 'X56_STK_12', num: 'BTN 12', name: 'H2 Direita', desc: 'Campo de Ruído / Chaff (J)' },
+      { id: '13', actionId: 'X56_STK_13', num: 'BTN 13', name: 'H2 Baixo', desc: 'Lançar Flare / Decoy (H)' },
+      { id: '14', actionId: 'X56_STK_14', num: 'BTN 14', name: 'H2 Esquerda', desc: 'Equilibrar Escudos (Num 5)' }
+    ]
+  },
+  {
+    title: '📈 Eixos Analógicos X56 Stick (Roll / Pitch / Twist Yaw)',
+    color: 'green',
+    items: [
+      { num: 'EIXO X', actionId: 'STICK_AXIS_X', name: 'Eixo X (js1_x — Roll)', desc: 'Rolamento Lateral da Nave', isAxis: true },
+      { num: 'EIXO Y', actionId: 'STICK_AXIS_Y', name: 'Eixo Y (js1_y — Pitch)', desc: 'Arfagem (Subir / Descer Nariz)', isAxis: true },
+      { num: 'TWIST Rz', actionId: 'STICK_AXIS_RZ', name: 'Torção Rz (js1_rotz — Twist Yaw)', desc: 'Guiada Integrada por Torção do Manche', isAxis: true }
+    ]
+  }
+];
+
+const X56_THROTTLE_VISUAL_GROUPS = [
+  {
+    title: '🕹️ Punho da Manete X56 (Botões E / F / G / I / H / K1 / Scroll)',
+    color: 'amber',
+    items: [
+      { id: '1', actionId: 'X56_THR_1', num: 'BTN 01', name: 'Botão E (Punho Sup.)', desc: 'Boost / Pós-Combustão (Hold LShift)' },
+      { id: '2', actionId: 'X56_THR_2', num: 'BTN 02', name: 'Botão F (Rotativo Topo)', desc: 'Cruise Control ON/OFF (C)' },
+      { id: '3', actionId: 'X56_THR_3', num: 'BTN 03', name: 'Botão G (Rotativo Inf.)', desc: 'Space Brake / Travão Espacial (Hold X)' },
+      { id: '4', actionId: 'X56_THR_4', num: 'BTN 04', name: 'Botão I (Punho Inf.)', desc: 'Inverter Propulsão / Recuar (Hold S)' },
+      { id: '5', actionId: 'X56_THR_5', num: 'BTN 05', name: 'Botão H (Indicador)', desc: 'Quantum Drive / Master Mode (B)' },
+      { id: '28', actionId: 'X56_THR_28', num: 'BTN 28', name: 'K1 Cima (Rocker)', desc: 'Armar Mais Mísseis (G)' },
+      { id: '29', actionId: 'X56_THR_29', num: 'BTN 29', name: 'K1 Baixo (Rocker)', desc: 'Reset Salva de Mísseis (Alt+G)' },
+      { id: '30', actionId: 'X56_THR_30', num: 'BTN 30', name: 'Scroll Frente', desc: 'Aumentar Limite Veloc./Laser (Wheel Up)' },
+      { id: '31', actionId: 'X56_THR_31', num: 'BTN 31', name: 'Scroll Trás', desc: 'Diminuir Limite Veloc./Laser (Wheel Dn)' },
+      { id: '32', actionId: 'X56_THR_32', num: 'BTN 32', name: 'SLD / Mini-Stick Push', desc: 'Push-to-Talk VOIP (Num +)' }
+    ]
+  },
+  {
+    title: '🎛️ Toggles Frontais da Base (SW 1 – SW 6 com Mola)',
+    color: 'amber',
+    items: [
+      { id: '6', actionId: 'X56_THR_6', num: 'BTN 06', name: 'SW 1 (Toggle Esq. ▲)', desc: 'Flight Ready — Ligar Nave (Alt+R)' },
+      { id: '7', actionId: 'X56_THR_7', num: 'BTN 07', name: 'SW 2 (Toggle Esq. ▼)', desc: 'Power Off — Desligar Energia (U)' },
+      { id: '8', actionId: 'X56_THR_8', num: 'BTN 08', name: 'SW 3 (Toggle Meio ▲)', desc: 'Energia Propulsores ON/OFF (I)' },
+      { id: '9', actionId: 'X56_THR_9', num: 'BTN 09', name: 'SW 4 (Toggle Meio ▼)', desc: 'Energia Armas ON/OFF (P)' },
+      { id: '10', actionId: 'X56_THR_10', num: 'BTN 10', name: 'SW 5 (Toggle Dir. ▲)', desc: 'Energia Escudos ON/OFF (O)' },
+      { id: '11', actionId: 'X56_THR_11', num: 'BTN 11', name: 'SW 6 (Toggle Dir. ▼)', desc: 'Chamar Torre ATC / Aterragem (Alt+N)' }
+    ]
+  },
+  {
+    title: '🎛️ Coluna Direita de Toggles (TGL 1 – TGL 4 com Mola)',
+    color: 'amber',
+    items: [
+      { id: '12', actionId: 'X56_THR_12', num: 'BTN 12', name: 'TGL 1 ▲ (Cima)', desc: 'Trem de Aterragem (N)' },
+      { id: '13', actionId: 'X56_THR_13', num: 'BTN 13', name: 'TGL 1 ▼ (Baixo)', desc: 'Pedir Aterragem ATC (Alt+N)' },
+      { id: '14', actionId: 'X56_THR_14', num: 'BTN 14', name: 'TGL 2 ▲ (Cima)', desc: 'Alternar Modo VTOL / Hover (K)' },
+      { id: '15', actionId: 'X56_THR_15', num: 'BTN 15', name: 'TGL 2 ▼ (Baixo)', desc: 'Faróis Exteriores da Nave (L)' },
+      { id: '16', actionId: 'X56_THR_16', num: 'BTN 16', name: 'TGL 3 ▲ (Cima)', desc: 'Abrir Todas as Portas (Alt+K)' },
+      { id: '17', actionId: 'X56_THR_17', num: 'BTN 17', name: 'TGL 3 ▼ (Baixo)', desc: 'Fechar Todas as Portas (Alt+O)' },
+      { id: '18', actionId: 'X56_THR_18', num: 'BTN 18', name: 'TGL 4 ▲ (Cima)', desc: 'Trancar Todas as Portas (Alt+L)' },
+      { id: '19', actionId: 'X56_THR_19', num: 'BTN 19', name: 'TGL 4 ▼ (Baixo)', desc: 'Limpar Visor Capacete (Alt+X)' }
+    ]
+  },
+  {
+    title: '🕹️ Hats de Polegar H3 & H4 (Scan / Câmara / Strafe)',
+    color: 'amber',
+    items: [
+      { id: '20', actionId: 'X56_THR_20', num: 'BTN 20', name: 'H3 Cima', desc: 'Alternar Modo Scan (V)' },
+      { id: '21', actionId: 'X56_THR_21', num: 'BTN 21', name: 'H3 Direita', desc: 'Câmara Externa 3ª Pessoa (F4)' },
+      { id: '22', actionId: 'X56_THR_22', num: 'BTN 22', name: 'H3 Baixo', desc: 'Modo Mineração / Salvage (M)' },
+      { id: '23', actionId: 'X56_THR_23', num: 'BTN 23', name: 'H3 Esquerda', desc: 'Interação / Match Vel (F)' },
+      { id: '24', actionId: 'X56_THR_24', num: 'BTN 24', name: 'H4 Cima', desc: 'Strafe Subir (Hold Space)' },
+      { id: '25', actionId: 'X56_THR_25', num: 'BTN 25', name: 'H4 Direita', desc: 'Strafe Direita (Hold D)' },
+      { id: '26', actionId: 'X56_THR_26', num: 'BTN 26', name: 'H4 Baixo', desc: 'Strafe Descer (Hold LCtrl)' },
+      { id: '27', actionId: 'X56_THR_27', num: 'BTN 27', name: 'H4 Esquerda', desc: 'Strafe Esquerda (Hold A)' }
+    ]
+  },
+  {
+    title: '🚀 Eixos Analógicos X56 Throttle (Alavancas X/Y + Rotativos + Mini-Stick)',
+    color: 'green',
+    items: [
+      { num: 'EIXO X', actionId: 'X56_THR_X', name: 'Alavanca Esq. (js2_x)', desc: 'Propulsão Longitudinal Principal (Invertido)', isAxis: true },
+      { num: 'EIXO Y', actionId: 'X56_THR_Y', name: 'Alavanca Dir. (js2_y)', desc: 'Aceleração Principal Sincronizada', isAxis: true },
+      { num: 'SLIDER 1', actionId: 'X56_THR_SL1', name: 'Rotativo F Topo (js2_slider1)', desc: 'Limitador de Velocidade Absoluto / Laser', isAxis: true },
+      { num: 'RTY 3', actionId: 'X56_THR_RTY3', name: 'Rotativo Base RTY 3 (js2_rotz)', desc: 'Controlo Analógico Auxiliar 3', isAxis: true },
+      { num: 'RTY 4', actionId: 'X56_THR_RTY4', name: 'Rotativo Base RTY 4 (js2_z)', desc: 'Controlo Analógico Auxiliar 4', isAxis: true },
+      { num: 'MINI-STICK', actionId: 'X56_THR_MINI', name: 'Mini-Stick Polegar (js2_rotx / roty)', desc: 'Strafe Lateral & Vertical Analógico', isAxis: true }
+    ]
+  }
+];
+
 function getKeyBadgeHtml(actionId) {
   const m = cachedMatrixMappings[actionId];
   if (!m) {
@@ -969,8 +1097,89 @@ const HOTAS_COORDINATES = {
   }
 };
 
+// Calibrated HUD target-lock coordinates for x56_stick.png (600x600) & x56_throttle.png (553x740)
+const X56_COORDINATES = {
+  stick: {
+    '1': { x: 40.5, y: 26.5, num: 'BTN 01', name: 'Trigger (Gatilho)' },
+    '2': { x: 44.0, y: 12.5, num: 'BTN 02', name: 'Botão A (Topo)' },
+    '3': { x: 53.5, y: 18.0, num: 'BTN 03', name: 'Botão B (Lateral)' },
+    '4': { x: 45.0, y: 31.0, num: 'BTN 04', name: 'Botão C (C-Stick Push)' },
+    '5': { x: 44.0, y: 36.0, num: 'BTN 05', name: 'Botão D (Polegar)' },
+    '6': { x: 39.0, y: 49.0, num: 'BTN 06', name: 'Pinky Lever (Shift Global)' },
+    'hat-up':    { x: 50.8, y: 8.5,  num: 'POV ▲', name: 'POV Hat Cima' },
+    'hat-right': { x: 53.8, y: 11.0, num: 'POV ▶', name: 'POV Hat Direita' },
+    'hat-down':  { x: 50.8, y: 13.5, num: 'POV ▼', name: 'POV Hat Baixo' },
+    'hat-left':  { x: 47.8, y: 11.0, num: 'POV ◀', name: 'POV Hat Esquerda' },
+    '7':  { x: 47.0, y: 15.5, num: 'BTN 07', name: 'H1 Cima' },
+    '8':  { x: 49.5, y: 18.0, num: 'BTN 08', name: 'H1 Direita' },
+    '9':  { x: 47.0, y: 20.5, num: 'BTN 09', name: 'H1 Baixo' },
+    '10': { x: 44.5, y: 18.0, num: 'BTN 10', name: 'H1 Esquerda' },
+    '11': { x: 53.5, y: 15.5, num: 'BTN 11', name: 'H2 Cima' },
+    '12': { x: 56.0, y: 18.0, num: 'BTN 12', name: 'H2 Direita' },
+    '13': { x: 53.5, y: 20.5, num: 'BTN 13', name: 'H2 Baixo' },
+    '14': { x: 51.0, y: 18.0, num: 'BTN 14', name: 'H2 Esquerda' },
+    'ax-EIXO_X':   { x: 51.5, y: 63.0, num: 'EIXO X', name: 'Roll (js1_x)' },
+    'ax-EIXO_Y':   { x: 51.5, y: 63.0, num: 'EIXO Y', name: 'Pitch (js1_y)' },
+    'ax-TWIST_Rz': { x: 51.5, y: 60.0, num: 'TWIST Rz', name: 'Twist Yaw (js1_rotz)' }
+  },
+  throttle: {
+    '1':  { x: 72.0, y: 33.5, num: 'BTN 01', name: 'Botão E (Punho Sup.)' },
+    '2':  { x: 84.5, y: 14.5, num: 'BTN 02', name: 'Botão F (Rotativo Topo)' },
+    '3':  { x: 84.5, y: 29.0, num: 'BTN 03', name: 'Botão G (Rotativo Inf.)' },
+    '4':  { x: 76.0, y: 38.0, num: 'BTN 04', name: 'Botão I (Punho Inf.)' },
+    '5':  { x: 69.5, y: 38.5, num: 'BTN 05', name: 'Botão H (Indicador)' },
+    '6':  { x: 38.0, y: 69.5, num: 'BTN 06', name: 'SW 1 (Base Esq. ▲)' },
+    '7':  { x: 37.5, y: 73.5, num: 'BTN 07', name: 'SW 2 (Base Esq. ▼)' },
+    '8':  { x: 51.0, y: 71.5, num: 'BTN 08', name: 'SW 3 (Base Meio ▲)' },
+    '9':  { x: 50.5, y: 75.5, num: 'BTN 09', name: 'SW 4 (Base Meio ▼)' },
+    '10': { x: 64.5, y: 73.5, num: 'BTN 10', name: 'SW 5 (Base Dir. ▲)' },
+    '11': { x: 64.0, y: 77.5, num: 'BTN 11', name: 'SW 6 (Base Dir. ▼)' },
+    '12': { x: 74.5, y: 52.5, num: 'BTN 12', name: 'TGL 1 ▲ (Cima)' },
+    '13': { x: 74.0, y: 55.5, num: 'BTN 13', name: 'TGL 1 ▼ (Baixo)' },
+    '14': { x: 82.5, y: 49.0, num: 'BTN 14', name: 'TGL 2 ▲ (Cima)' },
+    '15': { x: 82.0, y: 52.0, num: 'BTN 15', name: 'TGL 2 ▼ (Baixo)' },
+    '16': { x: 77.5, y: 42.0, num: 'BTN 16', name: 'TGL 3 ▲ (Cima)' },
+    '17': { x: 77.0, y: 45.0, num: 'BTN 17', name: 'TGL 3 ▼ (Baixo)' },
+    '18': { x: 85.0, y: 39.0, num: 'BTN 18', name: 'TGL 4 ▲ (Cima)' },
+    '19': { x: 84.5, y: 42.0, num: 'BTN 19', name: 'TGL 4 ▼ (Baixo)' },
+    '20': { x: 77.5, y: 33.5, num: 'BTN 20', name: 'H3 Cima' },
+    '21': { x: 79.5, y: 35.0, num: 'BTN 21', name: 'H3 Direita' },
+    '22': { x: 77.5, y: 36.5, num: 'BTN 22', name: 'H3 Baixo' },
+    '23': { x: 75.5, y: 35.0, num: 'BTN 23', name: 'H3 Esquerda' },
+    '24': { x: 72.5, y: 36.5, num: 'BTN 24', name: 'H4 Cima' },
+    '25': { x: 74.5, y: 38.0, num: 'BTN 25', name: 'H4 Direita' },
+    '26': { x: 72.5, y: 39.5, num: 'BTN 26', name: 'H4 Baixo' },
+    '27': { x: 70.5, y: 38.0, num: 'BTN 27', name: 'H4 Esquerda' },
+    '28': { x: 67.5, y: 31.0, num: 'BTN 28', name: 'K1 Cima' },
+    '29': { x: 67.5, y: 34.0, num: 'BTN 29', name: 'K1 Baixo' },
+    '30': { x: 33.0, y: 17.0, num: 'BTN 30', name: 'Scroll Frente' },
+    '31': { x: 33.0, y: 20.0, num: 'BTN 31', name: 'Scroll Trás' },
+    '32': { x: 77.5, y: 26.8, num: 'BTN 32', name: 'SLD / Mini-Stick Push' },
+    'ax-EIXO_X':     { x: 40.0, y: 25.0, num: 'EIXO X', name: 'Alavanca Esq. (js2_x)' },
+    'ax-EIXO_Y':     { x: 60.0, y: 25.0, num: 'EIXO Y', name: 'Alavanca Dir. (js2_y)' },
+    'ax-SLIDER_1':   { x: 84.5, y: 14.5, num: 'SLIDER 1', name: 'Rotativo F (js2_slider1)' },
+    'ax-RTY_3':      { x: 80.0, y: 61.0, num: 'RTY 3', name: 'Rotativo RTY 3 (js2_rotz)' },
+    'ax-RTY_4':      { x: 71.0, y: 65.5, num: 'RTY 4', name: 'Rotativo RTY 4 (js2_z)' },
+    'ax-MINI-STICK': { x: 77.5, y: 34.5, num: 'MINI-STICK', name: 'Mini-Stick Polegar (rotx/roty)' }
+  }
+};
+
+function getActiveHotasCoordinates(device) {
+  if (activeHotasKit === 'saitek_x56') {
+    return X56_COORDINATES[device];
+  }
+  return HOTAS_COORDINATES[device];
+}
+
+function getActiveVisualGroups(device) {
+  if (activeHotasKit === 'saitek_x56') {
+    return device === 'stick' ? X56_STICK_VISUAL_GROUPS : X56_THROTTLE_VISUAL_GROUPS;
+  }
+  return device === 'stick' ? STICK_VISUAL_GROUPS : THROTTLE_VISUAL_GROUPS;
+}
+
 function showButtonPointer(device, key) {
-  const coordsMap = HOTAS_COORDINATES[device];
+  const coordsMap = getActiveHotasCoordinates(device);
   if (!coordsMap) return;
   const pos = coordsMap[String(key)];
   if (!pos) return;
@@ -1010,7 +1219,7 @@ function renderOverlayHotspots() {
 
   if (stickOverlay) {
     stickOverlay.querySelectorAll('.vmap-hotspot-pin').forEach(p => p.remove());
-    for (const [key, pos] of Object.entries(HOTAS_COORDINATES.stick)) {
+    for (const [key, pos] of Object.entries(getActiveHotasCoordinates('stick'))) {
       const pin = document.createElement('div');
       pin.className = 'vmap-hotspot-pin';
       pin.style.left = pos.x + '%';
@@ -1032,7 +1241,7 @@ function renderOverlayHotspots() {
 
   if (throttleOverlay) {
     throttleOverlay.querySelectorAll('.vmap-hotspot-pin').forEach(p => p.remove());
-    for (const [key, pos] of Object.entries(HOTAS_COORDINATES.throttle)) {
+    for (const [key, pos] of Object.entries(getActiveHotasCoordinates('throttle'))) {
       const pin = document.createElement('div');
       pin.className = 'vmap-hotspot-pin';
       pin.style.left = pos.x + '%';
@@ -1058,9 +1267,9 @@ function renderVisualMapping() {
   const throttleCont = document.getElementById('vmap-throttle-buttons-container');
   if (!stickCont || !throttleCont) return;
 
-  // Render Stick
+  // Render Stick (adapta automaticamente ao kit ativo — Warthog / Logitech X56 / etc.)
   let stickHtml = '';
-  for (const grp of STICK_VISUAL_GROUPS) {
+  for (const grp of getActiveVisualGroups('stick')) {
     stickHtml += `
       <div class="vmap-group-box">
         <div class="vmap-group-title">${grp.title}</div>
@@ -1100,9 +1309,9 @@ function renderVisualMapping() {
   }
   stickCont.innerHTML = stickHtml;
 
-  // Render Throttle
+  // Render Throttle (adapta automaticamente ao kit ativo — Warthog / Logitech X56 / etc.)
   let throttleHtml = '';
-  for (const grp of THROTTLE_VISUAL_GROUPS) {
+  for (const grp of getActiveVisualGroups('throttle')) {
     throttleHtml += `
       <div class="vmap-group-box">
         <div class="vmap-group-title" style="color: var(--neon-amber);">${grp.title}</div>
@@ -3289,6 +3498,9 @@ function updateVisualKitGraphics(stickKitId, throttleKitId, stickAuto = false, t
 
   if (stickImg) stickImg.src = getStickImageForKit(sId);
   if (thrImg) thrImg.src = getThrottleImageForKit(tId, leftRole);
+
+  // Re-renderiza a lista de botões e os pins interativos para corresponderem exatamente ao kit ativo!
+  renderVisualMapping();
 }
 
 function renderHotasKitsGrid() {
