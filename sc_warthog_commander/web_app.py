@@ -9,6 +9,7 @@ import os
 import sys
 import time
 import json
+import atexit
 import asyncio
 import threading
 import subprocess
@@ -33,6 +34,7 @@ from config import load_config, save_config, get_resource_dir
 from dinput_reader import WarthogDeviceWatcher
 from switch_engine import SwitchEngine
 from warthog_leds import WarthogLEDController
+from x56_rgb import X56RGBController
 from profile_manager import ProfileManager
 from sc_process_monitor import StarCitizenProcessMonitor
 from tray_service import WarthogTrayIcon
@@ -133,6 +135,8 @@ hub = WebSocketHub()
 # Global state instances
 config = load_config()
 led_controller = WarthogLEDController(initial_brightness=config.get("throttle_led_brightness", 3))
+x56_rgb = X56RGBController(initial_settings=config.get("x56_rgb"))
+atexit.register(x56_rgb.close)
 profile_mgr = ProfileManager(
     config.get("active_profile", "combat"),
     config.get("custom_profile_mappings", {})
@@ -227,6 +231,13 @@ def on_led_state_change(leds: list[bool], brightness: int):
     })
 
 
+def on_x56_rgb_change(status: dict):
+    broadcast_threadsafe({
+        "type": "x56_rgb_status",
+        **status
+    })
+
+
 def _build_hotas_info_payload(auto_switch: bool = False) -> dict:
     has_hw = (watcher.stick_slot is not None) or (watcher.throttle_slot is not None)
     selected = watcher.detected_kit if (auto_switch and has_hw and watcher.detected_kit in HOTAS_KITS_META) else config.get("selected_hotas_kit", watcher.detected_kit or "warthog")
@@ -248,6 +259,13 @@ def _build_hotas_info_payload(auto_switch: bool = False) -> dict:
 def on_device_status(stick_conn: bool, throttle_conn: bool):
     if throttle_conn and (watcher.detected_throttle_kit == "warthog" or watcher.detected_kit == "warthog"):
         led_controller._push_state_to_hardware()
+    x56_rgb.sync_di_devices(watcher.detected_devices)
+    if (stick_conn or throttle_conn) and (
+        watcher.detected_kit == "saitek_x56"
+        or watcher.detected_stick_kit == "saitek_x56"
+        or watcher.detected_throttle_kit == "saitek_x56"
+    ):
+        x56_rgb.rescan(watcher.detected_devices)
     sc_live = find_sc_live_dir(config.get("star_citizen_live_path"))
     broadcast_threadsafe({
         "type": "device_status",
@@ -299,6 +317,9 @@ def apply_and_persist_profile(pid: str) -> dict:
     config["curve_type"] = pdata.get("curve_type", "expo")
     config["curve_exponent"] = pdata.get("curve_exponent", 1.8)
     config["mappings"] = pdata.get("mappings", DEFAULT_SC_MAPPINGS)
+    if x56_rgb.profile_sync:
+        x56_rgb.apply_profile_color(actual_pid)
+        config["x56_rgb"] = x56_rgb.export_config()
     save_config(config)
     return pdata
 
@@ -348,6 +369,7 @@ engine.on_afterburner_change = on_afterburner_change
 engine.on_profile_cycle_requested = on_profile_cycle_requested
 engine.on_profile_select_requested = on_profile_select_requested
 led_controller.on_state_change = on_led_state_change
+x56_rgb.on_state_change = on_x56_rgb_change
 sc_monitor.on_state_change = on_sc_process_change
 
 
@@ -421,6 +443,11 @@ async def websocket_endpoint(websocket: WebSocket):
         "type": "led_status",
         "leds": led_controller.led_states,
         "brightness": led_controller.brightness
+    }))
+
+    await websocket.send_text(json.dumps({
+        "type": "x56_rgb_status",
+        **x56_rgb.get_status()
     }))
 
     await websocket.send_text(json.dumps({
@@ -515,6 +542,43 @@ async def websocket_endpoint(websocket: WebSocket):
                     "type": "led_status",
                     "leds": led_controller.led_states,
                     "brightness": led_controller.brightness
+                })
+
+            elif msg_type == "set_x56_rgb":
+                prev_sync = x56_rgb.profile_sync
+                x56_rgb.update_settings(
+                    linked=data.get("linked") if "linked" in data else None,
+                    color=data.get("color") if "color" in data else None,
+                    stick_color=data.get("stick_color") if "stick_color" in data else None,
+                    throttle_color=data.get("throttle_color") if "throttle_color" in data else None,
+                    brightness=data.get("brightness") if "brightness" in data else None,
+                    profile_sync=data.get("profile_sync") if "profile_sync" in data else None,
+                    profile_colors=data.get("profile_colors") if "profile_colors" in data else None,
+                    push=True,
+                )
+                if data.get("profile_sync") is True and not prev_sync:
+                    x56_rgb.apply_profile_color(profile_mgr.active_profile_id)
+                config["x56_rgb"] = x56_rgb.export_config()
+                save_config(config)
+                st = x56_rgb.get_status()
+                await hub.broadcast({"type": "x56_rgb_status", **st})
+                if data.get("log_event"):
+                    lbl = str(data.get("preset_label") or st["throttle_color"])
+                    await hub.broadcast({
+                        "type": "log",
+                        "timestamp": time.strftime("%H:%M:%S"),
+                        "text": f"X56 RGB: {lbl} ({st['brightness']}%)",
+                        "key_hit": "🌈 RGB APLICADO" if st["status"] == "ready" else "🌈 GUARDADO"
+                    })
+
+            elif msg_type == "rescan_x56_rgb":
+                st = await asyncio.to_thread(x56_rgb.rescan, watcher.detected_devices)
+                await hub.broadcast({"type": "x56_rgb_status", **st})
+                await hub.broadcast({
+                    "type": "log",
+                    "timestamp": time.strftime("%H:%M:%S"),
+                    "text": f"X56 RGB DirectOutput: {st['message']}",
+                    "key_hit": "✅ RGB PRONTO" if st["status"] == "ready" else "⚠️ RGB"
                 })
 
             elif msg_type == "set_auto_boost":
@@ -794,6 +858,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 watcher.rescan_now()
                 if watcher.stick_slot is not None or watcher.throttle_slot is not None:
                     engine.set_active_kit(watcher.detected_kit)
+                x56_rgb.rescan(watcher.detected_devices)
                 await hub.broadcast({
                     "type": "device_status",
                     "stick": watcher.stick_slot is not None,
@@ -804,6 +869,7 @@ async def websocket_endpoint(websocket: WebSocket):
                     "sc_running": sc_monitor.is_running
                 })
                 await hub.broadcast(_build_hotas_info_payload(auto_switch=True))
+                await hub.broadcast({"type": "x56_rgb_status", **x56_rgb.get_status()})
 
             elif msg_type == "set_deadzone":
                 dz = data.get("value", 12)
@@ -939,6 +1005,12 @@ def run_glassmorphism_app():
     s_found, t_found = watcher.scan_devices()
     startup_kit = watcher.detected_kit if (s_found is not None or t_found is not None) else config.get("selected_hotas_kit", "warthog")
     engine.set_active_kit(startup_kit)
+    x56_rgb.sync_di_devices(watcher.detected_devices)
+    if startup_kit == "saitek_x56":
+        if x56_rgb.profile_sync:
+            x56_rgb.apply_profile_color(profile_mgr.active_profile_id)
+        else:
+            x56_rgb.apply_to_hardware()
     if sc_live:
         write_profile_to_sc(get_mappings_dir(sc_live), kit_id=startup_kit)
         # Tenta aplicar reparação automática se tiver permissões de escrita

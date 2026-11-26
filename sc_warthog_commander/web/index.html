@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;600;700;800&family=Rajdhani:wght@500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=5.9.5">
+  <link rel="stylesheet" href="style.css?v=5.9.6">
 </head>
 <body>
 
@@ -23,7 +23,7 @@
         </div>
         <div class="brand-text">
           <h1>WARTHOG MFD</h1>
-          <span class="mil-version-tag" id="app-version-tag">UEE // MIL-GLASS v5.9.5</span>
+          <span class="mil-version-tag" id="app-version-tag">UEE // MIL-GLASS v5.9.6</span>
         </div>
       </div>
 
@@ -256,37 +256,139 @@
           </div>
 
           
-                <!-- Warthog Throttle Base LEDs Controller -->
-          <div class="glass-panel hud-brackets" style="padding: 12px 14px; margin-bottom: 4px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-              <div class="deck-section-title" style="margin: 0;">💡 5 LEDs Verdes da Base Física da Manete (Controlo HID)</div>
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <span style="font-size: 11px; color: var(--text-secondary);">Retroiluminação:</span>
-                <input type="range" id="slider-backlight" min="0" max="5" value="3" style="width: 90px;" oninput="updateBacklight(this.value)">
-                <span id="label-backlight" style="font-size: 12px; font-weight: bold; color: var(--neon-cyan); min-width: 45px;">Nível 3</span>
+                <!-- Hardware Lighting Panel (Warthog 5 LEDs / Logitech G X56 RGB) -->
+          <div class="glass-panel hud-brackets" id="panel-lighting-container" style="padding: 12px 14px; margin-bottom: 4px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 8px; flex-wrap: wrap;">
+              <div class="lighting-mode-tabs">
+                <button type="button" id="btn-light-tab-warthog" class="lighting-tab-btn active" onclick="switchLightingPanel('warthog', true)">💡 Warthog LEDs</button>
+                <button type="button" id="btn-light-tab-x56" class="lighting-tab-btn" onclick="switchLightingPanel('x56', true)">🌈 Logitech X56 RGB</button>
+              </div>
+              <div id="warthog-backlight-ctrl" style="display: flex; align-items: center; gap: 6px;">
+                <span style="font-size: 10.5px; color: var(--text-secondary);">Brilho:</span>
+                <input type="range" id="slider-backlight" min="0" max="5" value="3" style="width: 78px;" oninput="updateBacklight(this.value)">
+                <span id="label-backlight" style="font-size: 11px; font-weight: bold; color: var(--neon-cyan); min-width: 42px;">Nível 3</span>
+              </div>
+              <div id="x56-rgb-header-ctrl" style="display: none; align-items: center; gap: 6px;">
+                <span id="x56-rgb-status-pill" class="x56-rgb-pill waiting">● AGUARDANDO X56</span>
+                <button type="button" class="btn-secondary" style="padding: 2px 7px; font-size: 10px;" title="Re-detetar DirectOutput / X56 RGB" onclick="rescanX56Rgb()">🔄</button>
               </div>
             </div>
 
-            <div class="base-leds-row">
-              <div id="warthog-led-1" class="base-led-unit" onclick="toggleHardwareLed(1)">
-                <div class="led-bulb"></div>
-                <span>LED 1: MASTER MODE</span>
+            <!-- SUB-PANEL A: Thrustmaster Warthog 5 Green LEDs -->
+            <div id="panel-warthog-leds">
+              <div class="base-leds-row">
+                <div id="warthog-led-1" class="base-led-unit" onclick="toggleHardwareLed(1)">
+                  <div class="led-bulb"></div>
+                  <span>LED 1: MASTER MODE</span>
+                </div>
+                <div id="warthog-led-2" class="base-led-unit" onclick="toggleHardwareLed(2)">
+                  <div class="led-bulb"></div>
+                  <span>LED 2: TREM ATERRAGEM</span>
+                </div>
+                <div id="warthog-led-3" class="base-led-unit" onclick="toggleHardwareLed(3)">
+                  <div class="led-bulb"></div>
+                  <span>LED 3: VTOL / HOVER</span>
+                </div>
+                <div id="warthog-led-4" class="base-led-unit" onclick="toggleHardwareLed(4)">
+                  <div class="led-bulb"></div>
+                  <span>LED 4: LUZES EXTERIORES</span>
+                </div>
+                <div id="warthog-led-5" class="base-led-unit" onclick="toggleHardwareLed(5)">
+                  <div class="led-bulb"></div>
+                  <span>LED 5: QUANTUM DRIVE</span>
+                </div>
               </div>
-              <div id="warthog-led-2" class="base-led-unit" onclick="toggleHardwareLed(2)">
-                <div class="led-bulb"></div>
-                <span>LED 2: TREM ATERRAGEM</span>
+            </div>
+
+            <!-- SUB-PANEL B: Logitech G / Saitek X56 Rhino RGB Backlight Controller -->
+            <div id="panel-x56-rgb" style="display: none;">
+              <div class="x56-rgb-main-row">
+                <!-- Unified Color Picker (Stick + Throttle) -->
+                <div id="x56-rgb-unified-wrap" class="x56-color-picker-box">
+                  <span id="x56-rgb-orb-unified" class="x56-rgb-orb" style="background: #00D2FF; box-shadow: 0 0 12px #00D2FF;"></span>
+                  <div style="display: flex; flex-direction: column; gap: 1px;">
+                    <span style="font-size: 9.5px; color: var(--text-dim); font-family: var(--font-mono);">COR RGB (STICK + MANETE)</span>
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                      <input type="color" id="x56-rgb-color-unified" class="x56-color-input" value="#00D2FF" oninput="onX56RgbColorInput('unified', this.value)">
+                      <span id="x56-rgb-hex-unified" style="font-family: var(--font-mono); font-size: 11px; color: var(--text-primary); font-weight: bold;">#00D2FF</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Separate Stick & Throttle Color Pickers (when unlinked) -->
+                <div id="x56-rgb-split-wrap" style="display: none; gap: 8px; flex: 1;">
+                  <div class="x56-color-picker-box" style="flex: 1;">
+                    <span id="x56-rgb-orb-stick" class="x56-rgb-orb" style="background: #00D2FF; box-shadow: 0 0 10px #00D2FF;"></span>
+                    <div>
+                      <div style="font-size: 9px; color: var(--text-dim); font-family: var(--font-mono);">MANCHE</div>
+                      <div style="display: flex; align-items: center; gap: 5px;">
+                        <input type="color" id="x56-rgb-color-stick" class="x56-color-input" value="#00D2FF" oninput="onX56RgbColorInput('stick', this.value)">
+                        <span id="x56-rgb-hex-stick" style="font-family: var(--font-mono); font-size: 10px; color: var(--text-primary);">#00D2FF</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="x56-color-picker-box" style="flex: 1;">
+                    <span id="x56-rgb-orb-throttle" class="x56-rgb-orb" style="background: #00D2FF; box-shadow: 0 0 10px #00D2FF;"></span>
+                    <div>
+                      <div style="font-size: 9px; color: var(--text-dim); font-family: var(--font-mono);">MANETE</div>
+                      <div style="display: flex; align-items: center; gap: 5px;">
+                        <input type="color" id="x56-rgb-color-throttle" class="x56-color-input" value="#00D2FF" oninput="onX56RgbColorInput('throttle', this.value)">
+                        <span id="x56-rgb-hex-throttle" style="font-family: var(--font-mono); font-size: 10px; color: var(--text-primary);">#00D2FF</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Brightness Slider (0..100%) -->
+                <div class="x56-brightness-box">
+                  <div style="display: flex; justify-content: space-between; align-items: center; font-size: 9.5px; font-family: var(--font-mono); margin-bottom: 3px;">
+                    <span style="color: var(--text-dim);">BRILHO LED</span>
+                    <span id="x56-rgb-brightness-val" style="color: var(--neon-cyan); font-weight: bold;">80%</span>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 6px;">
+                    <input type="range" id="x56-rgb-brightness" min="0" max="100" value="80" style="width: 100%;" oninput="onX56RgbBrightnessInput(this.value)">
+                    <button type="button" class="btn-secondary" style="padding: 1px 6px; font-size: 9.5px;" title="Desligar LEDs (0%)" onclick="applyX56RgbPreset('#000000', 0, 'Stealth Off')">OFF</button>
+                  </div>
+                </div>
               </div>
-              <div id="warthog-led-3" class="base-led-unit" onclick="toggleHardwareLed(3)">
-                <div class="led-bulb"></div>
-                <span>LED 3: VTOL / HOVER</span>
+
+              <!-- Tactical Presets Bar -->
+              <div class="x56-presets-row">
+                <button type="button" class="x56-preset-chip" onclick="applyX56RgbPreset('#00D2FF', null, 'UEE Cyan')" title="Azul HUD Star Citizen">
+                  <span class="x56-dot" style="background:#00D2FF;"></span>UEE Cyan
+                </button>
+                <button type="button" class="x56-preset-chip" onclick="applyX56RgbPreset('#FF1E2D', null, 'Aegis Red')" title="Combate • Menor consumo USB (ajuda contra ghost inputs no X56)">
+                  <span class="x56-dot" style="background:#FF1E2D;"></span>Aegis Red
+                </button>
+                <button type="button" class="x56-preset-chip" onclick="applyX56RgbPreset('#FF9900', null, 'Drake Amber')" title="Âmbar Mineração / Industrial">
+                  <span class="x56-dot" style="background:#FF9900;"></span>Drake
+                </button>
+                <button type="button" class="x56-preset-chip" onclick="applyX56RgbPreset('#00E676', null, 'Anvil Green')" title="Verde Tático / Médico">
+                  <span class="x56-dot" style="background:#00E676;"></span>Anvil
+                </button>
+                <button type="button" class="x56-preset-chip" onclick="applyX56RgbPreset('#A855F7', null, 'Quantum Violet')" title="Violeta Salto Quantum">
+                  <span class="x56-dot" style="background:#A855F7;"></span>Quantum
+                </button>
+                <button type="button" class="x56-preset-chip" onclick="applyX56RgbPreset('#FFFFFF', null, 'Crusader White')" title="Branco Cabine">
+                  <span class="x56-dot" style="background:#FFFFFF;"></span>Branco
+                </button>
               </div>
-              <div id="warthog-led-4" class="base-led-unit" onclick="toggleHardwareLed(4)">
-                <div class="led-bulb"></div>
-                <span>LED 4: LUZES EXTERIORES</span>
-              </div>
-              <div id="warthog-led-5" class="base-led-unit" onclick="toggleHardwareLed(5)">
-                <div class="led-bulb"></div>
-                <span>LED 5: QUANTUM DRIVE</span>
+
+              <!-- Toggles & Status Line -->
+              <div class="x56-rgb-footer">
+                <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                  <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; font-size: 10.5px; color: var(--text-secondary);">
+                    <input type="checkbox" id="x56-rgb-linked" checked onchange="toggleX56RgbLinked(this.checked)" style="accent-color: var(--neon-cyan);">
+                    Sincronizar Stick + Manete
+                  </label>
+                  <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; font-size: 10.5px; color: var(--text-secondary);" title="Muda automaticamente a cor RGB ao trocar de perfil (inclui seletor MODE M1/M2/S1 do X56)">
+                    <input type="checkbox" id="x56-rgb-profile-sync" onchange="toggleX56RgbProfileSync(this.checked)" style="accent-color: var(--mil-amber);">
+                    Auto-Cor por Perfil (M1/M2/S1)
+                  </label>
+                </div>
+                <div id="x56-rgb-status-msg" style="font-size: 10px; font-family: var(--font-mono); color: var(--text-dim); margin-top: 3px;">
+                  A verificar driver Logitech DirectOutput...
+                </div>
               </div>
             </div>
           </div>
@@ -1598,6 +1700,6 @@
 
   
 
-  <script src="app.js?v=5.9.5"></script>
+  <script src="app.js?v=5.9.6"></script>
 </body>
 </html>

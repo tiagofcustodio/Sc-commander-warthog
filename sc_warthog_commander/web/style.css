@@ -1767,3 +1767,168 @@ input[type="range"] {
   border-color: rgba(240, 164, 38, 0.55);
   color: var(--mil-amber);
 }
+
+/* ==========================================================================
+   LOGITECH G X56 RHINO RGB & HARDWARE LIGHTING SWITCHER
+   ========================================================================== */
+.lighting-mode-tabs {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(4, 9, 15, 0.72);
+  border: 1px solid rgba(72, 220, 255, 0.18);
+  padding: 2px;
+  border-radius: 4px;
+}
+
+.lighting-tab-btn {
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  letter-spacing: 0.3px;
+}
+
+.lighting-tab-btn:hover {
+  color: var(--text-primary);
+  background: rgba(72, 220, 255, 0.08);
+}
+
+.lighting-tab-btn.active {
+  color: #fff;
+  background: rgba(72, 220, 255, 0.18);
+  border-color: rgba(72, 220, 255, 0.45);
+  box-shadow: 0 0 10px rgba(72, 220, 255, 0.18);
+}
+
+.x56-rgb-pill {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  padding: 2px 7px;
+  border-radius: 3px;
+  letter-spacing: 0.4px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.x56-rgb-pill.ready {
+  background: rgba(56, 226, 157, 0.14);
+  color: var(--mil-green);
+  border-color: rgba(56, 226, 157, 0.45);
+}
+
+.x56-rgb-pill.waiting {
+  background: rgba(72, 220, 255, 0.12);
+  color: var(--sc-cyan);
+  border-color: rgba(72, 220, 255, 0.38);
+}
+
+.x56-rgb-pill.nodriver {
+  background: rgba(240, 164, 38, 0.14);
+  color: var(--mil-amber);
+  border-color: rgba(240, 164, 38, 0.45);
+}
+
+.x56-rgb-main-row {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  margin-bottom: 7px;
+}
+
+.x56-color-picker-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1.1;
+  background: rgba(4, 9, 15, 0.55);
+  border: 1px solid rgba(72, 220, 255, 0.16);
+  border-radius: 5px;
+  padding: 6px 9px;
+}
+
+.x56-brightness-box {
+  flex: 0.9;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background: rgba(4, 9, 15, 0.55);
+  border: 1px solid rgba(72, 220, 255, 0.16);
+  border-radius: 5px;
+  padding: 6px 9px;
+}
+
+.x56-rgb-orb {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.45);
+  flex-shrink: 0;
+  transition: background-color 0.12s ease, box-shadow 0.12s ease;
+}
+
+.x56-color-input {
+  width: 30px;
+  height: 20px;
+  padding: 0;
+  border: 1px solid rgba(72, 220, 255, 0.4);
+  border-radius: 3px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.x56-color-input::-webkit-color-swatch-wrapper {
+  padding: 1px;
+}
+
+.x56-color-input::-webkit-color-swatch {
+  border: none;
+  border-radius: 2px;
+}
+
+.x56-presets-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-bottom: 7px;
+}
+
+.x56-preset-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 7px;
+  background: rgba(8, 16, 26, 0.78);
+  border: 1px solid rgba(72, 220, 255, 0.18);
+  border-radius: 3px;
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.x56-preset-chip:hover {
+  color: #fff;
+  border-color: var(--sc-cyan);
+  background: rgba(72, 220, 255, 0.14);
+  transform: translateY(-1px);
+}
+
+.x56-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  display: inline-block;
+}
+
+.x56-rgb-footer {
+  padding-top: 5px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}

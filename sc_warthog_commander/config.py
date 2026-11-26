@@ -79,6 +79,20 @@ DEFAULT_AXIS_CALIBRATION = {
     "z": {"curve_type": "expo", "exponent": 1.5, "deadzone": 4, "saturation": 100, "invert": False},
 }
 
+DEFAULT_X56_RGB = {
+    "linked": True,
+    "stick_color": "#00D2FF",
+    "throttle_color": "#00D2FF",
+    "brightness": 80,
+    "profile_sync": False,
+    "profile_colors": {
+        "combat": "#FF1E2D",
+        "mining": "#FF9900",
+        "cargo": "#00D2FF",
+        "ground": "#00E676"
+    }
+}
+
 DEFAULT_CONFIG = {
     "star_citizen_live_path": DEFAULT_SC_PATH,
     "pulse_hold_ms": 60,
@@ -89,6 +103,7 @@ DEFAULT_CONFIG = {
     "active_profile": "combat",
     "afterburner_auto_boost": False,
     "throttle_led_brightness": 3,
+    "x56_rgb": DEFAULT_X56_RGB,
     "curve_type": "expo",
     "curve_exponent": 1.8,
     "split_throttle_mode": "speed_limiter",

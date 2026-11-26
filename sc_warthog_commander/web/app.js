@@ -470,6 +470,10 @@ function handleServerMessage(data) {
       updateBaseLeds(data.leds, data.brightness);
       break;
 
+    case 'x56_rgb_status':
+      applyX56RgbStatus(data);
+      break;
+
     case 'profile_changed':
       applyProfileData(data.profile_id, data.profile_data);
       announceProfileVoice(data.profile_id);
@@ -3639,6 +3643,7 @@ function applyHotasInfo(data) {
   if (sel && cachedHotasKits[activeHotasKit]) sel.value = activeHotasKit;
 
   updateVisualKitGraphics(stickKit, throttleKit, !!data.detected_stick_kit, !!data.detected_throttle_kit, leftRole);
+  if (typeof syncLightingPanelForKit === 'function') syncLightingPanelForKit(activeHotasKit);
   renderHotasKitsGrid();
   renderDetectedUsbList();
 }
@@ -3656,6 +3661,7 @@ function selectHotasKit(kitId) {
   }
 
   updateVisualKitGraphics(activeHotasKit, activeHotasKit, false, false, leftRole);
+  if (typeof syncLightingPanelForKit === 'function') syncLightingPanelForKit(activeHotasKit, true);
   renderHotasKitsGrid();
 
   if (ws && ws.readyState === WebSocket.OPEN) {
@@ -4334,3 +4340,262 @@ function testShipVoice(actionId) {
 window.addEventListener('DOMContentLoaded', () => {
   renderVoiceCalloutsEditor();
 });
+
+
+// ==============================================================================
+// LOGITECH G / SAITEK X56 RHINO RGB CONTROLLER UI (DIRECTOUTPUT)
+// ==============================================================================
+let x56RgbState = {
+  status: 'waiting_device',
+  dll_found: false,
+  devices_count: 0,
+  linked: true,
+  stick_color: '#00D2FF',
+  throttle_color: '#00D2FF',
+  brightness: 80,
+  profile_sync: false,
+  message: 'A verificar driver Logitech DirectOutput...'
+};
+let lightingPanelManualOverride = false;
+let lightingPanelLastKit = '';
+let x56RgbSendTimer = null;
+
+function switchLightingPanel(mode, isManual = false) {
+  if (isManual) {
+    lightingPanelManualOverride = true;
+    initAudio();
+    playCockpitSound('click');
+  }
+  const isX56 = (mode === 'x56');
+  const pWarthog = document.getElementById('panel-warthog-leds');
+  const pX56 = document.getElementById('panel-x56-rgb');
+  const hdrWarthog = document.getElementById('warthog-backlight-ctrl');
+  const hdrX56 = document.getElementById('x56-rgb-header-ctrl');
+  const btnW = document.getElementById('btn-light-tab-warthog');
+  const btnX = document.getElementById('btn-light-tab-x56');
+
+  if (pWarthog) pWarthog.style.display = isX56 ? 'none' : 'block';
+  if (pX56) pX56.style.display = isX56 ? 'block' : 'none';
+  if (hdrWarthog) hdrWarthog.style.display = isX56 ? 'none' : 'flex';
+  if (hdrX56) hdrX56.style.display = isX56 ? 'flex' : 'none';
+  if (btnW) btnW.classList.toggle('active', !isX56);
+  if (btnX) btnX.classList.toggle('active', isX56);
+
+  const container = document.getElementById('panel-lighting-container');
+  if (!isX56 && container) {
+    container.style.borderLeft = '';
+  } else if (isX56) {
+    renderX56RgbUI();
+  }
+}
+
+function syncLightingPanelForKit(kitId, force = false) {
+  if (force || kitId !== lightingPanelLastKit) {
+    lightingPanelManualOverride = false;
+    lightingPanelLastKit = kitId || '';
+  }
+  if (lightingPanelManualOverride) return;
+  switchLightingPanel(kitId === 'saitek_x56' ? 'x56' : 'warthog', false);
+}
+
+function _paintRgbOrb(orbId, hex, brightness) {
+  const el = document.getElementById(orbId);
+  if (!el) return;
+  const br = Math.max(0, Math.min(100, Number(brightness) || 0));
+  if (br === 0 || (hex || '').toUpperCase() === '#000000') {
+    el.style.background = '#101822';
+    el.style.boxShadow = 'none';
+    el.style.opacity = '0.6';
+  } else {
+    el.style.background = hex;
+    const glowPx = Math.round(4 + (br / 100) * 14);
+    el.style.boxShadow = `0 0 ${glowPx}px ${hex}`;
+    el.style.opacity = String(0.35 + (br / 100) * 0.65);
+  }
+}
+
+function renderX56RgbUI() {
+  const st = x56RgbState;
+  const thrHex = (st.throttle_color || '#00D2FF').toUpperCase();
+  const stkHex = (st.stick_color || thrHex).toUpperCase();
+  const br = Math.max(0, Math.min(100, parseInt(st.brightness ?? 80, 10)));
+  const linked = !!st.linked;
+
+  const pill = document.getElementById('x56-rgb-status-pill');
+  if (pill) {
+    if (st.status === 'ready') {
+      pill.className = 'x56-rgb-pill ready';
+      pill.textContent = `● DIRECTOUTPUT OK (${st.devices_count || 1})`;
+    } else if (st.status === 'no_driver') {
+      pill.className = 'x56-rgb-pill nodriver';
+      pill.textContent = '● DRIVER X56 OFF';
+    } else {
+      pill.className = 'x56-rgb-pill waiting';
+      pill.textContent = '● AGUARDANDO X56';
+    }
+  }
+
+  const msgEl = document.getElementById('x56-rgb-status-msg');
+  if (msgEl) {
+    const ver = st.dll_version ? ` [v${st.dll_version}]` : '';
+    msgEl.textContent = (st.message || '') + ver;
+    msgEl.style.color = st.status === 'ready'
+      ? 'var(--mil-green)'
+      : (st.status === 'no_driver' ? 'var(--mil-amber)' : 'var(--text-dim)');
+  }
+
+  const uniWrap = document.getElementById('x56-rgb-unified-wrap');
+  const splWrap = document.getElementById('x56-rgb-split-wrap');
+  if (uniWrap) uniWrap.style.display = linked ? 'flex' : 'none';
+  if (splWrap) splWrap.style.display = linked ? 'none' : 'flex';
+
+  const inpUni = document.getElementById('x56-rgb-color-unified');
+  const hexUni = document.getElementById('x56-rgb-hex-unified');
+  const inpStk = document.getElementById('x56-rgb-color-stick');
+  const hexStk = document.getElementById('x56-rgb-hex-stick');
+  const inpThr = document.getElementById('x56-rgb-color-throttle');
+  const hexThr = document.getElementById('x56-rgb-hex-throttle');
+
+  if (inpUni && inpUni.value.toUpperCase() !== thrHex) inpUni.value = thrHex;
+  if (hexUni) hexUni.textContent = thrHex;
+  if (inpStk && inpStk.value.toUpperCase() !== stkHex) inpStk.value = stkHex;
+  if (hexStk) hexStk.textContent = stkHex;
+  if (inpThr && inpThr.value.toUpperCase() !== thrHex) inpThr.value = thrHex;
+  if (hexThr) hexThr.textContent = thrHex;
+
+  _paintRgbOrb('x56-rgb-orb-unified', thrHex, br);
+  _paintRgbOrb('x56-rgb-orb-stick', stkHex, br);
+  _paintRgbOrb('x56-rgb-orb-throttle', thrHex, br);
+
+  const slBr = document.getElementById('x56-rgb-brightness');
+  const lblBr = document.getElementById('x56-rgb-brightness-val');
+  if (slBr && Number(slBr.value) !== br) slBr.value = br;
+  if (lblBr) lblBr.textContent = br + '%';
+
+  const chkLink = document.getElementById('x56-rgb-linked');
+  const chkSync = document.getElementById('x56-rgb-profile-sync');
+  if (chkLink) chkLink.checked = linked;
+  if (chkSync) chkSync.checked = !!st.profile_sync;
+
+  // Destaca a borda esquerda do painel com a cor RGB ativa quando em modo X56
+  const container = document.getElementById('panel-lighting-container');
+  const pX56 = document.getElementById('panel-x56-rgb');
+  if (container && pX56 && pX56.style.display !== 'none') {
+    container.style.borderLeft = (br > 0 && thrHex !== '#000000')
+      ? `3px solid ${thrHex}`
+      : '3px solid rgba(112, 198, 226, 0.25)';
+  }
+}
+
+function applyX56RgbStatus(data) {
+  if (!data) return;
+  x56RgbState = { ...x56RgbState, ...data };
+  renderX56RgbUI();
+  // Se o X56 DirectOutput estiver fisicamente ligado e o utilizador não mudou manualmente, abre logo o painel RGB
+  if (data.status === 'ready' && !lightingPanelManualOverride) {
+    switchLightingPanel('x56', false);
+  }
+}
+
+function _sendX56RgbUpdate(payload, immediate = false) {
+  const dispatch = () => {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({ type: 'set_x56_rgb', ...payload }));
+    }
+  };
+  if (x56RgbSendTimer) {
+    clearTimeout(x56RgbSendTimer);
+    x56RgbSendTimer = null;
+  }
+  if (immediate) {
+    dispatch();
+  } else {
+    x56RgbSendTimer = setTimeout(dispatch, 70);
+  }
+}
+
+function onX56RgbColorInput(target, hexVal) {
+  const norm = String(hexVal || '#00D2FF').toUpperCase();
+  if (target === 'unified') {
+    x56RgbState.throttle_color = norm;
+    x56RgbState.stick_color = norm;
+    if (x56RgbState.brightness === 0 && norm !== '#000000') x56RgbState.brightness = 80;
+    renderX56RgbUI();
+    _sendX56RgbUpdate({ color: norm, brightness: x56RgbState.brightness }, false);
+  } else if (target === 'stick') {
+    x56RgbState.stick_color = norm;
+    if (x56RgbState.brightness === 0 && norm !== '#000000') x56RgbState.brightness = 80;
+    renderX56RgbUI();
+    _sendX56RgbUpdate({ stick_color: norm, brightness: x56RgbState.brightness }, false);
+  } else {
+    x56RgbState.throttle_color = norm;
+    if (x56RgbState.brightness === 0 && norm !== '#000000') x56RgbState.brightness = 80;
+    renderX56RgbUI();
+    _sendX56RgbUpdate({ throttle_color: norm, brightness: x56RgbState.brightness }, false);
+  }
+}
+
+function onX56RgbBrightnessInput(val) {
+  const br = Math.max(0, Math.min(100, parseInt(val || '0', 10)));
+  x56RgbState.brightness = br;
+  renderX56RgbUI();
+  _sendX56RgbUpdate({ brightness: br }, false);
+}
+
+function toggleX56RgbLinked(checked) {
+  initAudio();
+  playCockpitSound('click');
+  x56RgbState.linked = !!checked;
+  if (x56RgbState.linked) {
+    x56RgbState.stick_color = x56RgbState.throttle_color;
+  }
+  renderX56RgbUI();
+  _sendX56RgbUpdate({
+    linked: x56RgbState.linked,
+    stick_color: x56RgbState.stick_color,
+    throttle_color: x56RgbState.throttle_color
+  }, true);
+}
+
+function toggleX56RgbProfileSync(checked) {
+  initAudio();
+  playCockpitSound('chirp');
+  x56RgbState.profile_sync = !!checked;
+  renderX56RgbUI();
+  _sendX56RgbUpdate({
+    profile_sync: x56RgbState.profile_sync,
+    log_event: true,
+    preset_label: checked ? 'Auto-Sync por Perfil ATIVO' : 'Auto-Sync por Perfil DESATIVADO'
+  }, true);
+}
+
+function applyX56RgbPreset(hex, forcedBrightness, label) {
+  initAudio();
+  playCockpitSound('chirp');
+  const norm = String(hex || '#00D2FF').toUpperCase();
+  const nextBr = (forcedBrightness !== null && forcedBrightness !== undefined)
+    ? forcedBrightness
+    : (x56RgbState.brightness > 0 ? x56RgbState.brightness : 80);
+
+  x56RgbState.throttle_color = norm;
+  x56RgbState.stick_color = norm;
+  x56RgbState.brightness = nextBr;
+  renderX56RgbUI();
+
+  _sendX56RgbUpdate({
+    color: norm,
+    brightness: nextBr,
+    log_event: true,
+    preset_label: label || norm
+  }, true);
+}
+
+function rescanX56Rgb() {
+  initAudio();
+  playCockpitSound('chirp');
+  const msgEl = document.getElementById('x56-rgb-status-msg');
+  if (msgEl) msgEl.textContent = '⏳ A procurar DirectOutput.dll e módulos Logitech X56...';
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({ type: 'rescan_x56_rgb' }));
+  }
+}
