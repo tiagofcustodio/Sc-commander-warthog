@@ -7,10 +7,14 @@ import os
 import sys
 import argparse
 
-# Configura saída UTF-8 segura no Windows
-if hasattr(sys.stdout, "reconfigure"):
+# Configura saída UTF-8 segura no Windows (e suporta executável sem consola)
+if sys.stdout is None:
+    sys.stdout = open(os.devnull, "w", encoding="utf-8")
+elif hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
-if hasattr(sys.stderr, "reconfigure"):
+if sys.stderr is None:
+    sys.stderr = open(os.devnull, "w", encoding="utf-8")
+elif hasattr(sys.stderr, "reconfigure"):
     sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
 from actionmaps_fixer import (
@@ -85,7 +89,8 @@ def main():
     if args.generate_3d:
         from pathlib import Path
         from print3d_generator import generate_all_warthog_3d_and_diagrams
-        out_dir = Path(__file__).resolve().parent / "profiles"
+        from config import get_app_dir
+        out_dir = Path(get_app_dir()) / "profiles"
         res = generate_all_warthog_3d_and_diagrams(out_dir)
         print("\n[3D & Diagram Generator] Ficheiros gerados com sucesso:")
         for k, v in res.items():

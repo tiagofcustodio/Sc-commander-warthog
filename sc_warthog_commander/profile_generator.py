@@ -482,7 +482,8 @@ def write_profile_to_sc(mappings_dir: str) -> tuple[bool, str]:
     """Escreve o perfil completo na pasta mappings do Star Citizen e mantém uma cópia local."""
     content = generate_warthog_xml_content()
 
-    local_profiles_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "profiles")
+    from config import get_app_dir
+    local_profiles_dir = os.path.join(get_app_dir(), "profiles")
     os.makedirs(local_profiles_dir, exist_ok=True)
     local_file = os.path.join(local_profiles_dir, "layout_warthog_sc_fixed.xml")
     try:

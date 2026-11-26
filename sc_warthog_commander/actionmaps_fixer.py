@@ -191,7 +191,8 @@ def create_backup(xml_path: str) -> Optional[str]:
         shutil.copy2(xml_path, backup_path)
         return backup_path
     except PermissionError:
-        local_profiles_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "profiles")
+        from config import get_app_dir
+        local_profiles_dir = os.path.join(get_app_dir(), "profiles")
         os.makedirs(local_profiles_dir, exist_ok=True)
         local_backup = os.path.join(local_profiles_dir, f"actionmaps.xml.bak_{timestamp}")
         shutil.copy2(xml_path, local_backup)
@@ -420,7 +421,8 @@ def fix_actionmaps(xml_path: str, fix_roll_pitch: bool = True) -> Tuple[bool, st
         _set_action_rebind(am_voip, "foip_pushtotalk", "js2_button2")
 
         # Guarda sempre uma cópia local reparada em profiles/actionmaps_REPARADO.xml
-        local_profiles_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "profiles")
+        from config import get_app_dir
+        local_profiles_dir = os.path.join(get_app_dir(), "profiles")
         os.makedirs(local_profiles_dir, exist_ok=True)
         local_repaired = os.path.join(local_profiles_dir, "actionmaps_REPARADO.xml")
         tree.write(local_repaired, encoding="utf-8", xml_declaration=True)

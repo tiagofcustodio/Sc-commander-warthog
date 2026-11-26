@@ -4,5 +4,6 @@ __pycache__/
 *.bak_*
 *.log
 backups/
+build/
 .DS_Store
 Thumbs.db

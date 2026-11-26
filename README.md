@@ -1,11 +1,12 @@
-# 🚀 Star Citizen — Warthog Commander PRO (v5.4 UEE MIL-GLASS)
+# 🚀 Star Citizen — Warthog Commander PRO (v5.6 UEE MIL-GLASS)
 
 > **☕ If you like this project, buy me a coffee:** [https://paypal.me/tcustodio](https://paypal.me/tcustodio)  
-> **📦 GitHub Repository:** [https://github.com/tiagofcustodio/Sc-commander-warthog](https://github.com/tiagofcustodio/Sc-commander-warthog)
+> **📦 GitHub Repository:** [https://github.com/tiagofcustodio/Sc-commander-warthog](https://github.com/tiagofcustodio/Sc-commander-warthog)  
+> **⬇️ Standalone Windows `.exe` (No Python required):** [`dist/SC_Warthog_Commander.exe`](https://github.com/tiagofcustodio/Sc-commander-warthog/raw/main/dist/SC_Warthog_Commander.exe)
 
-Tactical Command Center, intelligent DirectInput hardware bridge, interactive dual-joystick visual mapping studio, and automatic `actionmaps.xml` fixer for **Star Citizen 4.x**, with full **Multi-HOTAS** support:
+Tactical Command Center, intelligent DirectInput hardware bridge, interactive dual-joystick visual mapping studio, and automatic `actionmaps.xml` fixer for **Star Citizen 4.x**, with full **Multi-HOTAS / HOSAS** support:
 
-* **Thrustmaster:** HOTAS Warthog (A-10C 19-Button Stick + 32-Button Dual Throttle + 5 HID Base LEDs), T.16000M FCS + TWCS Throttle, TCA Officer Pack Airbus, T.Flight HOTAS (X / 4 / One), HOTAS Cougar & Viper TQS.
+* **Thrustmaster:** HOTAS Warthog (A-10C 19-Button Stick + 32-Button Dual Throttle + 5 HID Base LEDs), **T.16000M FCS** (**HOSAS Dual Stick**, **HOTAS + TWCS Throttle**, or **Single Stick**), TCA Officer Pack Airbus, T.Flight HOTAS (X / 4 / One), HOTAS Cougar & Viper TQS.
 * **Saitek / Logitech G:** X56 Rhino HOTAS (17-Button Stick + 32-Button Dual Throttle).
 
 ---
@@ -93,11 +94,19 @@ Analysis of Star Citizen's `actionmaps.xml` and Thrustmaster HOTAS Warthog hardw
 
 ## ▶️ Quick Start
 
-1. Double-click **`run.bat`** (automatically requests Administrator privileges so it can repair `actionmaps.xml` inside `C:\Program Files\Roberts Space Industries\StarCitizen\LIVE`).
-2. The **Warthog Commander PRO** dashboard opens automatically in your browser:
-   - Automatically detects your connected Thrustmaster or Saitek X56 joysticks and switches the visual map images.
-   - Repairs `actionmaps.xml` and installs `layout_warthog_sc_fixed.xml` into Star Citizen's `controls\mappings` folder.
-   - In-game console (`~`): run `pp_rebindkeys layout_warthog_sc_fixed` to load the profile immediately.
+### Option 1 — Standalone Executable (Recommended, Zero Setup)
+1. Download **[`SC_Warthog_Commander.exe`](https://github.com/tiagofcustodio/Sc-commander-warthog/raw/main/dist/SC_Warthog_Commander.exe)** (all Python & UI dependencies bundled — ~44 MB).
+2. Double-click **`SC_Warthog_Commander.exe`** (automatically requests Administrator privileges to write to Star Citizen's `actionmaps.xml` and send inputs in-game).
+3. The **Warthog Commander PRO** dashboard opens automatically, with a System Tray icon for minimizing to the tray.
+
+### Option 2 — Run from Source / Rebuild `.exe`
+1. Double-click **`run.bat`** to run directly from Python source (requests Administrator privileges automatically).
+2. To rebuild the standalone executable yourself, run **`build_exe.bat`** (uses `SC_Warthog_Commander.spec` with PyInstaller).
+
+### In-Game Setup
+- Automatically detects your connected Thrustmaster (Warthog, T.16000M HOSAS/HOTAS/Single, TCA, T.Flight) or Saitek X56 joysticks and switches the visual map images automatically.
+- Repairs `actionmaps.xml` and installs `layout_warthog_sc_fixed.xml` into Star Citizen's `controls\mappings` folder.
+- In-game console (`~`): run `pp_rebindkeys layout_warthog_sc_fixed` to load the profile immediately.
 
 ---
 

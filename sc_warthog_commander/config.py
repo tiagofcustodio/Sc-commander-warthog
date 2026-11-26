@@ -4,10 +4,26 @@ Gerencia a persistência das configurações do Warthog Commander em JSON.
 """
 
 import os
+import sys
 import json
 from warthog_constants import DEFAULT_SC_MAPPINGS
 
-CONFIG_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.json")
+
+def get_resource_dir() -> str:
+    """Pasta de recursos empacotados (web/, ícones). Usa sys._MEIPASS no .exe PyInstaller."""
+    if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
+        return sys._MEIPASS
+    return os.path.dirname(os.path.abspath(__file__))
+
+
+def get_app_dir() -> str:
+    """Pasta gravável de dados do utilizador (config.json, profiles/). Junto ao .exe quando empacotado."""
+    if getattr(sys, "frozen", False):
+        return os.path.dirname(os.path.abspath(sys.executable))
+    return os.path.dirname(os.path.abspath(__file__))
+
+
+CONFIG_FILE = os.path.join(get_app_dir(), "config.json")
 
 GITHUB_REPO_URL = "https://github.com/tiagofcustodio/Sc-commander-warthog"
 DONATE_URL = "https://paypal.me/tcustodio"

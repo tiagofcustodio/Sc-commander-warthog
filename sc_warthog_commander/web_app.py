@@ -29,7 +29,7 @@ from warthog_constants import (
     THROTTLE_HATS,
     THROTTLE_AXES
 )
-from config import load_config, save_config
+from config import load_config, save_config, get_resource_dir
 from dinput_reader import WarthogDeviceWatcher
 from switch_engine import SwitchEngine
 from warthog_leds import WarthogLEDController
@@ -57,7 +57,7 @@ latest_update_info = {
     "message": f"Versão atual v{APP_VERSION}"
 }
 
-WEB_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "web")
+WEB_DIR = os.path.join(get_resource_dir(), "web")
 HOST = "127.0.0.1"
 PORT = 8765
 
@@ -870,7 +870,10 @@ def run_glassmorphism_app():
     threading.Thread(target=open_desktop_window, daemon=True).start()
 
     print(f"\n⚡ [Warthog SC Commander Pro] Servidor ativo em http://{HOST}:{PORT}")
-    uvicorn.run(app, host=HOST, port=PORT, log_level="warning")
+    uvicorn_kwargs = {"host": HOST, "port": PORT, "log_level": "warning"}
+    if getattr(sys, "frozen", False) and (sys.stdout is None or not hasattr(sys.stdout, "isatty") or not sys.stdout.isatty()):
+        uvicorn_kwargs["log_config"] = None
+    uvicorn.run(app, **uvicorn_kwargs)
 
 
 if __name__ == "__main__":

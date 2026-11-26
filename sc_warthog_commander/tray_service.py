@@ -223,7 +223,8 @@ class WarthogTrayIcon:
         win32gui.UpdateWindow(self.hwnd)
 
         # Carrega o ícone personalizado Star Citizen + HOTAS (.ico) com fallback seguro
-        ico_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "web", "app_icon.ico")
+        from config import get_resource_dir
+        ico_path = os.path.join(get_resource_dir(), "web", "app_icon.ico")
         hicon = None
         if os.path.exists(ico_path):
             try:

@@ -14,8 +14,10 @@ import urllib.request
 import urllib.error
 from typing import Tuple
 
-APP_VERSION = "5.4.0"
-APP_DIR = os.path.dirname(os.path.abspath(__file__))
+from config import get_app_dir
+
+APP_VERSION = "5.6.0"
+APP_DIR = get_app_dir()
 BACKUP_DIR = os.path.join(APP_DIR, "backups")
 
 
