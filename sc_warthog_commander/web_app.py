@@ -249,6 +249,7 @@ def on_device_status(stick_conn: bool, throttle_conn: bool):
         "sc_running": sc_monitor.is_running
     })
     if stick_conn or throttle_conn:
+        engine.set_active_kit(watcher.detected_kit)
         if watcher.detected_kit in HOTAS_KITS_META:
             config["selected_hotas_kit"] = watcher.detected_kit
             save_config(config)

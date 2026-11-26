@@ -34,7 +34,8 @@ class SwitchEngine:
         self.on_afterburner_change: Optional[Callable[[bool], None]] = None
         self.on_profile_cycle_requested: Optional[Callable[[], None]] = None
 
-        # Estado da Camada Shift (Pinky Lever - Botão 4 do Manche)
+        # Estado da Camada Shift (Pinky Lever - Botão 4 no Warthog, Botão 6 no Logitech X56)
+        self.active_kit = "warthog"
         self.shift_active = False
 
         # Estado de Pós-Combustão (Afterburner Detent no eixo Z desativado para evitar LSHIFT preso / Shift+Z)
@@ -121,20 +122,27 @@ class SwitchEngine:
                 elif self.on_action_triggered:
                     self.on_action_triggered(act_id, key_lbl, desc)
 
+    def set_active_kit(self, kit_id: str):
+        """Atualiza o kit HOTAS ativo para adaptar botões específicos (ex: Pinky Shift e Cutoff)."""
+        if kit_id:
+            self.active_kit = kit_id
+
     def handle_button_event(self, device: str, button: int, is_down: bool):
-        """Processa todos os botões do Manche (1 a 19) e da Manete (1 a 32)."""
+        """Processa todos os botões do Manche (1 a 32) e da Manete (1 a 32)."""
 
         # ======================================================================
-        # 1. MANCHE A-10C (STICK - Botões 1 a 19 segundo VID_044F&PID_0402.dev)
+        # 1. MANCHE (STICK)
         # ======================================================================
         if device == "stick":
-            if button == 4:
-                # S4 (Pinky Lever) = Modificador Shift Global
+            pinky_btn = 6 if self.active_kit == "saitek_x56" else 4
+            if button == pinky_btn:
+                # Pinky Lever = Modificador Shift Global
                 self.shift_active = is_down
                 if self.on_shift_change:
                     self.on_shift_change(is_down)
                 if is_down and self.on_action_triggered:
-                    self.on_action_triggered("SHIFT_MODIFIER_ON", "S4 PINKY (HOLD)", "Camada Shift Ativada")
+                    lbl = "X56 PINKY (HOLD)" if self.active_kit == "saitek_x56" else "S4 PINKY (HOLD)"
+                    self.on_action_triggered("SHIFT_MODIFIER_ON", lbl, "Camada Shift Ativada")
                 return
 
             if self.shift_active and is_down:
@@ -180,8 +188,8 @@ class SwitchEngine:
         if device != "throttle":
             return
 
-        # --- A. DETENTORES FÍSICOS IDLE CUTOFF (Botão 29 = Dir IDLEROFF, Botão 30 = Esq IDLELOFF) ---
-        if button in (29, 30):
+        # --- A. DETENTORES FÍSICOS IDLE CUTOFF (Apenas Thrustmaster Warthog: Botões 29 e 30) ---
+        if button in (29, 30) and self.active_kit == "warthog":
             now = time.time()
             if (now - self._last_cutoff_event_time < 0.35) and (self._last_cutoff_state == is_down):
                 return

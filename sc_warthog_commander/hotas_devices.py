@@ -10,6 +10,7 @@ from typing import Optional
 VID_THRUSTMASTER = 0x044F
 VID_SAITEK_MADCATZ = 0x0738
 VID_SAITEK_LOGITECH = 0x06A3
+VID_LOGITECH = 0x046D
 
 # Tabela de dispositivos suportados por (VID, PID)
 KNOWN_USB_DEVICES = {
@@ -36,11 +37,16 @@ KNOWN_USB_DEVICES = {
     (VID_THRUSTMASTER, 0x0412): {"kit": "warthog", "role": "throttle", "brand": "Thrustmaster", "model": "Viper TQS Mission Pack", "buttons": 32, "axes": 5},
     (VID_THRUSTMASTER, 0x0413): {"kit": "warthog", "role": "throttle", "brand": "Thrustmaster", "model": "Viper Panel", "buttons": 32, "axes": 2},
 
-    # --- SAITEK / LOGITECH G X56 RHINO HOTAS ---
-    (VID_SAITEK_MADCATZ, 0x2221): {"kit": "saitek_x56", "role": "stick", "brand": "Saitek / Logitech", "model": "Saitek X56 Rhino Stick", "buttons": 17, "axes": 5},
-    (VID_SAITEK_MADCATZ, 0xA221): {"kit": "saitek_x56", "role": "throttle", "brand": "Saitek / Logitech", "model": "Saitek X56 Rhino Throttle", "buttons": 32, "axes": 6},
+    # --- SAITEK / LOGITECH G X56 & X55 RHINO HOTAS ---
+    (VID_SAITEK_MADCATZ, 0x2221): {"kit": "saitek_x56", "role": "stick", "brand": "Logitech G / Saitek", "model": "Logitech G X56 Rhino Stick", "buttons": 17, "axes": 5},
+    (VID_SAITEK_MADCATZ, 0xA221): {"kit": "saitek_x56", "role": "throttle", "brand": "Logitech G / Saitek", "model": "Logitech G X56 Rhino Throttle", "buttons": 32, "axes": 6},
     (VID_SAITEK_LOGITECH, 0x2221): {"kit": "saitek_x56", "role": "stick", "brand": "Logitech G / Saitek", "model": "Logitech G X56 Rhino Stick", "buttons": 17, "axes": 5},
     (VID_SAITEK_LOGITECH, 0xA221): {"kit": "saitek_x56", "role": "throttle", "brand": "Logitech G / Saitek", "model": "Logitech G X56 Rhino Throttle", "buttons": 32, "axes": 6},
+    (VID_LOGITECH, 0x2221): {"kit": "saitek_x56", "role": "stick", "brand": "Logitech G", "model": "Logitech G X56 Rhino Stick", "buttons": 17, "axes": 5},
+    (VID_LOGITECH, 0xA221): {"kit": "saitek_x56", "role": "throttle", "brand": "Logitech G", "model": "Logitech G X56 Rhino Throttle", "buttons": 32, "axes": 6},
+    (VID_LOGITECH, 0xC221): {"kit": "saitek_x56", "role": "stick", "brand": "Logitech G", "model": "Logitech G X56 Rhino Stick", "buttons": 17, "axes": 5},
+    (VID_SAITEK_MADCATZ, 0x2215): {"kit": "saitek_x56", "role": "stick", "brand": "Saitek / Logitech", "model": "Saitek X55 Rhino Stick", "buttons": 17, "axes": 5},
+    (VID_SAITEK_MADCATZ, 0xA215): {"kit": "saitek_x56", "role": "throttle", "brand": "Saitek / Logitech", "model": "Saitek X55 Rhino Throttle", "buttons": 32, "axes": 6},
 }
 
 # Catálogo de Kits selecionáveis na interface
@@ -129,14 +135,14 @@ def identify_usb_device(mid: int, pid: int, oem_name: str = "") -> Optional[dict
 
     name_l = (oem_name or "").lower()
 
-    # Fallback por nome OEM para Saitek / Logitech X56
-    if "x56" in name_l or "x-56" in name_l or "rhino" in name_l:
+    # Fallback por nome OEM para Saitek / Logitech G X56 / X55
+    if any(k in name_l for k in ("x56", "x-56", "x55", "x-55", "rhino")):
         is_thr = "throttle" in name_l
         return {
             "kit": "saitek_x56",
             "role": "throttle" if is_thr else "stick",
-            "brand": "Saitek / Logitech",
-            "model": oem_name or ("Saitek X56 Throttle" if is_thr else "Saitek X56 Stick"),
+            "brand": "Logitech G / Saitek",
+            "model": oem_name or ("Logitech G X56 Throttle" if is_thr else "Logitech G X56 Stick"),
             "buttons": 32 if is_thr else 17,
             "axes": 6 if is_thr else 5,
         }

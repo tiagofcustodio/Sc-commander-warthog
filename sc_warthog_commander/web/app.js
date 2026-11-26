@@ -3186,7 +3186,7 @@ function makeTacticalSvgUri(title, subtitle, accentColor, isThrottle) {
 function getStickImageForKit(kitId) {
   if (kitId === 'warthog') return '/warthog_stick_526x1181.png';
   if (kitId === 'tm_t16000m' || kitId === 'tm_t16000m_hosas' || kitId === 'tm_t16000m_single') return '/t16000m_stick.png';
-  if (kitId === 'saitek_x56') return makeTacticalSvgUri('SAITEK / LOGITECH X56 STICK', '17B • C-STICK • TWIST YAW • RGB', '#48dcff', false);
+  if (kitId === 'saitek_x56') return '/x56_stick.png';
   if (kitId === 'tm_tca') return makeTacticalSvgUri('THRUSTMASTER TCA SIDESTICK', '17B • AIRBUS EDITION • TWIST', '#48dcff', false);
   if (kitId === 'tm_tflight') return makeTacticalSvgUri('THRUSTMASTER T.FLIGHT STICK', '12B • R1/L1/R3 • TWIST YAW', '#48dcff', false);
   return '/warthog_stick_526x1181.png';
@@ -3200,7 +3200,7 @@ function getThrottleImageForKit(kitId, leftRole = 'throttle') {
   }
   // HOTAS (Throttle Lever)
   if (kitId === 'warthog') return '/warthog_throttle_509x455.png';
-  if (kitId === 'saitek_x56') return makeTacticalSvgUri('SAITEK / LOGITECH X56 THROTTLE', '32B • 7 TOGGLES • 4 ROTATIVOS • M1/M2/S1', '#f0a426', true);
+  if (kitId === 'saitek_x56') return '/x56_throttle.png';
   if (kitId === 'tm_t16000m') return makeTacticalSvgUri('THRUSTMASTER TWCS THROTTLE', '14B • S.M.A.R.T RAIL • PADDLE', '#f0a426', true);
   if (kitId === 'tm_tca') return makeTacticalSvgUri('THRUSTMASTER TCA QUADRANT', '17B • DUAL THRUST • REVERSERS', '#f0a426', true);
   if (kitId === 'tm_tflight') return makeTacticalSvgUri('THRUSTMASTER T.FLIGHT THROTTLE', 'ALAVANCA • ROCKER LEME • BTN 5-12', '#f0a426', true);

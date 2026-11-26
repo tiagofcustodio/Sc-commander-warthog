@@ -50,6 +50,46 @@ def get_mappings_dir(sc_live_dir: str) -> str:
     return os.path.join(sc_live_dir, "user", "client", "0", "controls", "mappings")
 
 
+def _classify_sc_joystick_product(prod: str) -> tuple[bool, bool, str]:
+    """Classifica o atributo Product do Star Citizen (is_stick, is_throttle, kit_id)."""
+    p = (prod or "").strip()
+    pl = p.lower()
+    pu = p.upper()
+
+    # Thrustmaster HOTAS Warthog
+    if (WARTHOG_JOYSTICK_GUID_SUBSTR in pu) or ("joystick" in pl and "warthog" in pl):
+        return True, False, "warthog"
+    if (WARTHOG_THROTTLE_GUID_SUBSTR in pu) or ("throttle" in pl and "warthog" in pl):
+        return False, True, "warthog"
+
+    # Logitech G / Saitek X56 & X55 Rhino
+    if any(g in pu for g in ("22210738", "222106A3", "C221046D", "2221046D", "22150738")) or (
+        any(k in pl for k in ("x56", "x-56", "x55", "x-55", "rhino")) and "throttle" not in pl
+    ):
+        return True, False, "saitek_x56"
+    if any(g in pu for g in ("A2210738", "A22106A3", "A221046D", "A2150738")) or (
+        any(k in pl for k in ("x56", "x-56", "x55", "x-55", "rhino")) and "throttle" in pl
+    ):
+        return False, True, "saitek_x56"
+
+    # Thrustmaster T.16000M / TWCS / TCA / T.Flight
+    if "B10A044F" in pu or "t.16000" in pl or "t16000" in pl:
+        return True, False, "tm_t16000m"
+    if "B687044F" in pu or "twcs" in pl:
+        return False, True, "tm_t16000m"
+    if "tca" in pl and "quadrant" in pl:
+        return False, True, "tm_tca"
+    if "tca" in pl or "t.flight" in pl or "t-flight" in pl:
+        return True, False, "tm_tca" if "tca" in pl else "tm_tflight"
+
+    # Genérico por nome
+    if "throttle" in pl:
+        return False, True, "generic"
+    if "stick" in pl or "joystick" in pl:
+        return True, False, "generic"
+    return False, False, "unknown"
+
+
 def diagnose_actionmaps(xml_path: str) -> dict:
     """
     Analisa profundamente o actionmaps.xml do Star Citizen e deteta todas as causas
@@ -82,18 +122,18 @@ def diagnose_actionmaps(xml_path: str) -> dict:
         for opt in root.findall(".//options[@type='joystick']"):
             inst = opt.get("instance")
             prod = opt.get("Product", "") or ""
-            is_stick = (WARTHOG_JOYSTICK_GUID_SUBSTR in prod) or ("joystick" in prod.lower() and "warthog" in prod.lower())
-            is_throttle = (WARTHOG_THROTTLE_GUID_SUBSTR in prod) or ("throttle" in prod.lower() and "warthog" in prod.lower())
+            is_stick, is_throttle, dev_kit = _classify_sc_joystick_product(prod)
 
             report["instances"][inst] = {
                 "product": prod,
                 "is_stick": is_stick,
-                "is_throttle": is_throttle
+                "is_throttle": is_throttle,
+                "kit": dev_kit
             }
 
-            if is_stick:
+            if is_stick and stick_inst is None:
                 stick_inst = inst
-            if is_throttle:
+            elif is_throttle and throttle_inst is None:
                 throttle_inst = inst
                 # Verifica expoente excessivo nos thrusters
                 strafe_lon = opt.find("flight_strafe_longitudinal")
@@ -115,8 +155,8 @@ def diagnose_actionmaps(xml_path: str) -> dict:
         if stick_inst == "2" and throttle_inst == "1":
             report["is_swapped"] = True
             report["anomalies"].append("CRÍTICO: O Star Citizen trocou a Manete (js1) com o Manche (js2).")
-        elif not stick_inst or not throttle_inst:
-            report["anomalies"].append("AVISO: Dispositivos Warthog incompletos no cabeçalho de opções.")
+        elif not stick_inst and not throttle_inst:
+            report["anomalies"].append("AVISO: Nenhum joystick HOTAS reconhecido no cabeçalho de opções do Star Citizen.")
 
         # 3. Analisa conflitos de Thrusters e Eixos em spaceship_movement
         mov_map = root.find(".//actionmap[@name='spaceship_movement']")
@@ -251,12 +291,20 @@ def fix_actionmaps(xml_path: str, fix_roll_pitch: bool = True) -> Tuple[bool, st
         # 1. Corrige <options type="joystick"> para Manche (instance 1) e Manete (instance 2)
         opt_stick = None
         opt_throttle = None
+        detected_xml_kit = "warthog"
         for opt in profile.findall("options[@type='joystick']"):
             prod = opt.get("Product", "") or ""
-            if (WARTHOG_JOYSTICK_GUID_SUBSTR in prod) or ("joystick" in prod.lower() and "warthog" in prod.lower()):
+            is_stick, is_throttle, dev_kit = _classify_sc_joystick_product(prod)
+            if is_stick and opt_stick is None:
                 opt_stick = opt
-            elif (WARTHOG_THROTTLE_GUID_SUBSTR in prod) or ("throttle" in prod.lower() and "warthog" in prod.lower()):
+                if dev_kit not in ("unknown", "generic"):
+                    detected_xml_kit = dev_kit
+            elif is_throttle and opt_throttle is None:
                 opt_throttle = opt
+                if dev_kit not in ("unknown", "generic"):
+                    detected_xml_kit = dev_kit
+
+        is_x56 = (detected_xml_kit == "saitek_x56")
 
         if opt_stick is not None:
             opt_stick.set("instance", "1")
@@ -281,25 +329,38 @@ def fix_actionmaps(xml_path: str, fix_roll_pitch: bool = True) -> Tuple[bool, st
                 spd_abs = ET.SubElement(opt_throttle, "flight_move_speed_range_abs")
             spd_abs.set("invert", "1")
 
-        # 2. Remove qualquer binding acidental nos botões de Cutoff (29 e 30)
-        for rebind in profile.findall(".//rebind"):
-            inp = (rebind.get("input", "") or "").strip()
-            if inp in ("js2_button29", "js2_button30"):
-                rebind.set("input", "js2_ ")
+        # 2. Remove bindings acidentais nos botões de Cutoff (29 e 30) APENAS no Warthog
+        # (No Logitech X56, os botões 29 e 30 são interruptores normais da base)
+        if not is_x56:
+            for rebind in profile.findall(".//rebind"):
+                inp = (rebind.get("input", "") or "").strip()
+                if inp in ("js2_button29", "js2_button30"):
+                    rebind.set("input", "js2_ ")
 
         # 3. Aplica o Mapeamento Completo e Corrigido em todas as categorias do Star Citizen
         # 3.1 Movimento e Propulsores (spaceship_movement)
         am_mov = _get_or_create_actionmap(profile, "spaceship_movement")
         _set_action_rebind(am_mov, "v_pitch", "js1_y")
         _set_action_rebind(am_mov, "v_roll", "js1_x")
-        _set_action_rebind(am_mov, "v_strafe_lateral", "js2_x")
-        _set_action_rebind(am_mov, "v_strafe_vertical", "js2_y")
-        _set_action_rebind(am_mov, "v_strafe_longitudinal", "js2_z")
-        _set_action_rebind(am_mov, "v_throttle_abs", "js2_rotz")
+        if is_x56:
+            # Logitech G / Saitek X56 Rhino:
+            # Stick possui Twist Yaw (js1_rotz); Throttle usa X/Y para as duas alavancas,
+            # Z para o rotativo F (Speed Limiter) e rotx/roty para o mini-stick do polegar!
+            _set_action_rebind(am_mov, "v_yaw", "js1_rotz")
+            _set_action_rebind(am_mov, "v_strafe_longitudinal", "js2_x")
+            _set_action_rebind(am_mov, "v_throttle_abs", "js2_y")
+            _set_action_rebind(am_mov, "v_speed_range_abs", "js2_z")
+            _set_action_rebind(am_mov, "v_strafe_lateral", "js2_rotx")
+            _set_action_rebind(am_mov, "v_strafe_vertical", "js2_roty")
+        else:
+            _set_action_rebind(am_mov, "v_strafe_lateral", "js2_x")
+            _set_action_rebind(am_mov, "v_strafe_vertical", "js2_y")
+            _set_action_rebind(am_mov, "v_strafe_longitudinal", "js2_z")
+            _set_action_rebind(am_mov, "v_throttle_abs", "js2_rotz")
+            _set_action_rebind(am_mov, "v_speed_range_abs", "js2_slider1")
         _set_action_rebind(am_mov, "v_strafe_longitudinal_invert", "js2_button12")
         _set_action_rebind(am_mov, "v_strafe_back", "js2_button12")
-        _set_action_rebind(am_mov, "v_speed_range_abs", "js2_slider1")
-        _set_action_rebind(am_mov, "v_ifcs_speed_limiter_rel", "js2_ ")  # Liberta js2_rotz!
+        _set_action_rebind(am_mov, "v_ifcs_speed_limiter_rel", "js2_ ")  # Liberta eixo da manete!
         _set_action_rebind(am_mov, "v_accel_range_rel", "js2_ ")
         _set_action_rebind(am_mov, "v_strafe_up", "js2_hat1_up")
         _set_action_rebind(am_mov, "v_strafe_down", "js2_hat1_down")

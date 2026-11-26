@@ -20,6 +20,7 @@ from hotas_devices import (
     VID_THRUSTMASTER,
     VID_SAITEK_MADCATZ,
     VID_SAITEK_LOGITECH,
+    VID_LOGITECH,
 )
 
 winmm = ctypes.windll.winmm
@@ -157,7 +158,7 @@ class WarthogDeviceWatcher:
         self.cutoff_right = False  # Botão 30 premido = Manete Dir. em OFF
 
         # Eixos atuais (0..65535)
-        self.stick_axes = {"x": 32767, "y": 32767}
+        self.stick_axes = {"x": 32767, "y": 32767, "rz": 32767}
         self.throttle_axes = {
             "z": 65535,      # Manete Esquerda (0=Máx Frente, 65535=Idle Trás)
             "rz": 65535,     # Manete Direita Principal (0=Máx Frente, 65535=Idle Trás)
@@ -286,7 +287,7 @@ class WarthogDeviceWatcher:
                 self.stick_name = oem_name or f"HOTAS Stick {btns}-Btn (Slot {slot})"
 
         # 4. Fallback para controladores Thrustmaster / Saitek / Logitech secundários
-        supported_vids = (VID_THRUSTMASTER, VID_SAITEK_MADCATZ, VID_SAITEK_LOGITECH)
+        supported_vids = (VID_THRUSTMASTER, VID_SAITEK_MADCATZ, VID_SAITEK_LOGITECH, VID_LOGITECH)
         if throttle_found is None:
             for dev in connected_slots:
                 if dev["slot"] != stick_found and (dev["btns"] >= 24 or dev["mid"] in supported_vids):
@@ -360,7 +361,8 @@ class WarthogDeviceWatcher:
                         self.log(f"Manete detetada no Slot {new_throttle}: {self.throttle_name}")
                         if self._poll_slot(new_throttle, jie_throttle):
                             self.prev_throttle_buttons = jie_throttle.dwButtons
-                            self._sync_initial_throttle_switches(jie_throttle.dwButtons)
+                            if self.detected_throttle_kit == "warthog":
+                                self._sync_initial_throttle_switches(jie_throttle.dwButtons)
                 last_scan_time = now
 
             stick_connected = False
@@ -373,7 +375,7 @@ class WarthogDeviceWatcher:
                     curr_buttons = jie_stick.dwButtons
                     diff = curr_buttons ^ self.prev_stick_buttons
                     if diff:
-                        for b in range(1, 20):
+                        for b in range(1, 33):
                             mask = 1 << (b - 1)
                             if diff & mask:
                                 is_down = bool(curr_buttons & mask)
@@ -390,9 +392,11 @@ class WarthogDeviceWatcher:
 
                     self.stick_axes["x"] = jie_stick.dwXpos
                     self.stick_axes["y"] = jie_stick.dwYpos
+                    self.stick_axes["rz"] = jie_stick.dwRpos
                     if self.on_axis_change:
                         self.on_axis_change("stick", "x", jie_stick.dwXpos)
                         self.on_axis_change("stick", "y", jie_stick.dwYpos)
+                        self.on_axis_change("stick", "rz", jie_stick.dwRpos)
                 else:
                     self.stick_slot = None
                     self.stick_name = "Desconectado"
@@ -403,9 +407,14 @@ class WarthogDeviceWatcher:
                     throttle_connected = True
                     curr_buttons = jie_throttle.dwButtons
 
-                    # Deteta estado de bloqueio IDLE CUTOFF (Botão 29 = Esq, Botão 30 = Dir)
-                    cut_l = bool(curr_buttons & (1 << 28))
-                    cut_r = bool(curr_buttons & (1 << 29))
+                    # Deteta estado de bloqueio IDLE CUTOFF apenas no Thrustmaster Warthog (Botões 29/30)
+                    # No Logitech X56 os botões 29 e 30 são interruptores normais, não detents de cutoff.
+                    if self.detected_throttle_kit == "warthog":
+                        cut_l = bool(curr_buttons & (1 << 28))
+                        cut_r = bool(curr_buttons & (1 << 29))
+                    else:
+                        cut_l = False
+                        cut_r = False
                     if (cut_l != self.cutoff_left) or (cut_r != self.cutoff_right):
                         self.cutoff_left = cut_l
                         self.cutoff_right = cut_r
@@ -429,21 +438,26 @@ class WarthogDeviceWatcher:
                         if self.on_hat_change:
                             self.on_hat_change("throttle", pov_dir)
 
-                    # Todos os 5 Eixos da Manete:
-                    # dwZpos = Manete Esquerda (Z)
-                    # dwRpos = Manete Direita Principal (Rz)
-                    # dwUpos = Roda Cinzenta de Fricção (Slider 1)
-                    # dwXpos / dwYpos = Mini-stick Slew
-                    self.throttle_axes["z"] = jie_throttle.dwZpos
-                    self.throttle_axes["rz"] = jie_throttle.dwRpos
-                    self.throttle_axes["slider"] = jie_throttle.dwUpos
-                    self.throttle_axes["slew_x"] = jie_throttle.dwXpos
-                    self.throttle_axes["slew_y"] = jie_throttle.dwYpos
+                    # Mapeamento de Eixos da Manete consoante o hardware ligado:
+                    # - Logitech / Saitek X56 Throttle: X = Alavanca Esq., Y = Alavanca Dir., Z = Rotativo F, U/V = Mini-Stick Polegar
+                    # - Thrustmaster Warthog / outros: Z = Alavanca Esq., Rz = Alavanca Dir., U = Slider 1, X/Y = Mini-Stick Slew
+                    if self.detected_throttle_kit == "saitek_x56":
+                        self.throttle_axes["z"] = jie_throttle.dwXpos
+                        self.throttle_axes["rz"] = jie_throttle.dwYpos
+                        self.throttle_axes["slider"] = jie_throttle.dwZpos
+                        self.throttle_axes["slew_x"] = jie_throttle.dwUpos
+                        self.throttle_axes["slew_y"] = jie_throttle.dwVpos
+                    else:
+                        self.throttle_axes["z"] = jie_throttle.dwZpos
+                        self.throttle_axes["rz"] = jie_throttle.dwRpos
+                        self.throttle_axes["slider"] = jie_throttle.dwUpos
+                        self.throttle_axes["slew_x"] = jie_throttle.dwXpos
+                        self.throttle_axes["slew_y"] = jie_throttle.dwYpos
 
                     if self.on_axis_change:
-                        self.on_axis_change("throttle", "z", jie_throttle.dwZpos)
-                        self.on_axis_change("throttle", "rz", jie_throttle.dwRpos)
-                        self.on_axis_change("throttle", "slider", jie_throttle.dwUpos)
+                        self.on_axis_change("throttle", "z", self.throttle_axes["z"])
+                        self.on_axis_change("throttle", "rz", self.throttle_axes["rz"])
+                        self.on_axis_change("throttle", "slider", self.throttle_axes["slider"])
                 else:
                     self.throttle_slot = None
                     self.throttle_name = "Desconectado"
