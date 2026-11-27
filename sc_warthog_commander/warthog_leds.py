@@ -41,9 +41,9 @@ HW_LED_BITS = (
 )
 WARTHOG_OUTPUT_REPORT_LEN = 36  # 0x24 bytes exigidos pelo descritor HID da Manete 044F:0404
 
-setupapi = ctypes.windll.setupapi
-hid = ctypes.windll.hid
-kernel32 = ctypes.windll.kernel32
+setupapi = ctypes.WinDLL("setupapi", use_last_error=True)
+hid = ctypes.WinDLL("hid", use_last_error=True)
+kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
 
 
 class GUID(ctypes.Structure):

@@ -146,9 +146,9 @@ class _VS_FIXEDFILEINFO(ctypes.Structure):
     ]
 
 
-# Configura Win32 setupapi / hid / kernel32 com tipos explícitos 64-bit
-_setupapi = ctypes.windll.setupapi
-_hid = ctypes.windll.hid
+# Configura instâncias privadas WinDLL (evita conflitos de argtypes com warthog_leds.py!)
+_setupapi = ctypes.WinDLL("setupapi", use_last_error=True)
+_hid = ctypes.WinDLL("hid", use_last_error=True)
 _kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
 
 _hid.HidD_GetHidGuid.argtypes = [ctypes.POINTER(_GUID)]
