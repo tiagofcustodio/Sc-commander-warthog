@@ -4425,7 +4425,8 @@ function renderX56RgbUI() {
   if (pill) {
     if (st.status === 'ready') {
       pill.className = 'x56-rgb-pill ready';
-      pill.textContent = `● DIRECTOUTPUT OK (${st.devices_count || 1})`;
+      const bk = st.backend || 'USB HID';
+      pill.textContent = `● ${bk} (${st.devices_count || 1})`;
     } else if (st.status === 'no_driver') {
       pill.className = 'x56-rgb-pill nodriver';
       pill.textContent = '● DRIVER X56 OFF';

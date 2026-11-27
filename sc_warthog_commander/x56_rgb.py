@@ -1,15 +1,18 @@
 """
-Logitech G / Saitek X56 Rhino RGB Backlight Controller (DirectOutput.dll Native API)
-Controla a cor RGB de 24 bits (0..16777215) e o brilho (0..100%) do Manche e da Manete
-Logitech G / Saitek X56 Rhino através da biblioteca oficial DirectOutput.dll do Windows.
+Logitech G / Saitek X56 Rhino RGB Backlight Controller (True Dual-Engine)
+Controla a cor RGB de 24 bits e o brilho (0..100%) do Manche (VID_0738&PID_2221) e da
+Manete (VID_0738&PID_A221) Logitech G / Saitek X56 Rhino usando DOIS motores nativos:
 
-Características:
-- Deteção automática de DirectOutput.dll via Registo do Windows e caminhos padrão Logitech/Saitek
-- Compatível com DirectOutput v8.x (3 argumentos em AddPage — X56) e v7.x legado (4 argumentos)
-- Identificação exata de Stick (PID 0x2221) vs Throttle (PID 0xA221) via GUID DirectInput8
-- Controlo unificado (Stick + Manete juntos) ou independente (cores distintas por módulo)
-- Sincronização automática opcional com Perfis Star Citizen (M1 Combate / M2 Mineração / S1 Carga)
-- Falha graciosa (zero crashes) quando o X56 ou o driver DirectOutput não estão presentes
+1. Motor Direto USB HID (HidD_SetFeature na Interface 2 / MI_02 / UsagePage 0xFF00):
+   - Funciona IMEDIATAMENTE no Windows 10/11 SEM precisar do software Logitech nem DirectOutput.dll!
+   - Envia os pacotes exatos de 64 bytes verificados no descritor HID do X56:
+       • Feature Report ID 0x09: [0x09, 0x00, 0x03, R, G, B, 0x00...] (cor escalada pelo brilho)
+       • Feature Report ID 0x01: [0x01, 0x01, 0x00...]                (commit / aplicar no MCU)
+
+2. Motor Oficial DirectOutput.dll (protocolo exato de X56.cs / spreedated):
+   - Usa os GUIDs oficiais do X56 (Throttle EE9E44A9-... / Stick 40D17E5E-...).
+   - Executa a sequência completa AddPage(1,1) -> SetLed(1,0,brilho) -> SetLed(1,1,cor24) -> RemovePage(1)
+     em cada alteração para nunca sofrer E_PAGENOTACTIVE quando o software Logitech está ativo.
 """
 
 import ctypes
@@ -20,13 +23,37 @@ import time
 import winreg
 from typing import Callable, Optional
 
-# Constantes DirectOutput SDK
+# ---------------------------------------------------------------------------
+# Constantes USB HID (Logitech / Saitek / Mad Catz X56 Rhino)
+# ---------------------------------------------------------------------------
+X56_VIDS = (0x0738, 0x046D)
+X56_STICK_PID = 0x2221
+X56_THROTTLE_PID = 0xA221
+X56_HID_USAGE_PAGE_CTRL = 0xFF00
+X56_HID_FEATURE_LEN = 64
+
+GENERIC_READ = 0x80000000
+GENERIC_WRITE = 0x40000000
+FILE_SHARE_READ = 0x00000001
+FILE_SHARE_WRITE = 0x00000002
+OPEN_EXISTING = 3
+INVALID_HANDLE_VALUE = ctypes.c_void_p(-1).value
+DIGCF_PRESENT = 0x00000002
+DIGCF_DEVICEINTERFACE = 0x00000010
+HIDP_STATUS_SUCCESS = 0x00110000
+
+# ---------------------------------------------------------------------------
+# Constantes DirectOutput SDK (verificadas de neXn.X56.DirectOutput / X56.cs)
+# ---------------------------------------------------------------------------
 FLAG_SET_AS_ACTIVE = 0x00000001
 X56_PAGE_ID = 1
 X56_LED_IDX_BRIGHTNESS = 0  # 0..100
 X56_LED_IDX_COLOR = 1       # (R << 16) | (G << 8) | B (0..16777215)
 
-# GUIDs de dispositivos Saitek que NÃO são X56 (para evitar interferir com X52 Pro / FIP)
+X56_THROTTLE_TYPE_GUID = "EE9E44A9-46CD-470B-B650-9C5859992240"
+X56_STICK_TYPE_GUID = "40D17E5E-8091-409F-A2B5-24EF1915A812"
+
+# Dispositivos Saitek que NÃO são X56
 _NON_X56_DEVICE_TYPE_GUIDS = {
     "29DAD506-F93B-4F20-85FA-1E02C04FAC17",  # Saitek X52 Pro
     "3E083CD8-6A37-4A58-80A8-3D6A2C07513E",  # Saitek Flight Instrument Panel (FIP)
@@ -50,12 +77,54 @@ DEFAULT_X56_RGB_CONFIG = {
 }
 
 
+# ---------------------------------------------------------------------------
+# Estruturas Win32 (64-bit safe)
+# ---------------------------------------------------------------------------
 class _GUID(ctypes.Structure):
     _fields_ = [
         ("Data1", wintypes.DWORD),
         ("Data2", wintypes.WORD),
         ("Data3", wintypes.WORD),
         ("Data4", ctypes.c_ubyte * 8),
+    ]
+
+
+class _SP_DEVICE_INTERFACE_DATA(ctypes.Structure):
+    _fields_ = [
+        ("cbSize", wintypes.DWORD),
+        ("InterfaceClassGuid", _GUID),
+        ("Flags", wintypes.DWORD),
+        ("Reserved", ctypes.c_size_t),
+    ]
+
+
+class _HIDD_ATTRIBUTES(ctypes.Structure):
+    _fields_ = [
+        ("Size", wintypes.ULONG),
+        ("VendorID", wintypes.USHORT),
+        ("ProductID", wintypes.USHORT),
+        ("VersionNumber", wintypes.USHORT),
+    ]
+
+
+class _HIDP_CAPS(ctypes.Structure):
+    _fields_ = [
+        ("Usage", wintypes.USHORT),
+        ("UsagePage", wintypes.USHORT),
+        ("InputReportByteLength", wintypes.USHORT),
+        ("OutputReportByteLength", wintypes.USHORT),
+        ("FeatureReportByteLength", wintypes.USHORT),
+        ("Reserved", wintypes.USHORT * 17),
+        ("NumberLinkCollectionNodes", wintypes.USHORT),
+        ("NumberInputButtonCaps", wintypes.USHORT),
+        ("NumberInputValueCaps", wintypes.USHORT),
+        ("NumberInputDataIndices", wintypes.USHORT),
+        ("NumberOutputButtonCaps", wintypes.USHORT),
+        ("NumberOutputValueCaps", wintypes.USHORT),
+        ("NumberOutputDataIndices", wintypes.USHORT),
+        ("NumberFeatureButtonCaps", wintypes.USHORT),
+        ("NumberFeatureValueCaps", wintypes.USHORT),
+        ("NumberFeatureDataIndices", wintypes.USHORT),
     ]
 
 
@@ -77,19 +146,73 @@ class _VS_FIXEDFILEINFO(ctypes.Structure):
     ]
 
 
+# Configura Win32 setupapi / hid / kernel32 com tipos explícitos 64-bit
+_setupapi = ctypes.windll.setupapi
+_hid = ctypes.windll.hid
+_kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+
+_hid.HidD_GetHidGuid.argtypes = [ctypes.POINTER(_GUID)]
+_hid.HidD_GetHidGuid.restype = None
+
+_hid.HidD_GetAttributes.argtypes = [ctypes.c_void_p, ctypes.POINTER(_HIDD_ATTRIBUTES)]
+_hid.HidD_GetAttributes.restype = wintypes.BOOLEAN
+
+_hid.HidD_GetPreparsedData.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_void_p)]
+_hid.HidD_GetPreparsedData.restype = wintypes.BOOLEAN
+
+_hid.HidD_FreePreparsedData.argtypes = [ctypes.c_void_p]
+_hid.HidD_FreePreparsedData.restype = wintypes.BOOLEAN
+
+_hid.HidP_GetCaps.argtypes = [ctypes.c_void_p, ctypes.POINTER(_HIDP_CAPS)]
+_hid.HidP_GetCaps.restype = ctypes.c_long
+
+_hid.HidD_SetFeature.argtypes = [ctypes.c_void_p, ctypes.c_void_p, wintypes.ULONG]
+_hid.HidD_SetFeature.restype = wintypes.BOOLEAN
+
+_setupapi.SetupDiGetClassDevsW.argtypes = [
+    ctypes.POINTER(_GUID), wintypes.LPCWSTR, wintypes.HWND, wintypes.DWORD
+]
+_setupapi.SetupDiGetClassDevsW.restype = ctypes.c_void_p
+
+_setupapi.SetupDiEnumDeviceInterfaces.argtypes = [
+    ctypes.c_void_p, ctypes.c_void_p, ctypes.POINTER(_GUID),
+    wintypes.DWORD, ctypes.POINTER(_SP_DEVICE_INTERFACE_DATA)
+]
+_setupapi.SetupDiEnumDeviceInterfaces.restype = wintypes.BOOL
+
+_setupapi.SetupDiGetDeviceInterfaceDetailW.argtypes = [
+    ctypes.c_void_p, ctypes.POINTER(_SP_DEVICE_INTERFACE_DATA),
+    ctypes.c_void_p, wintypes.DWORD, ctypes.POINTER(wintypes.DWORD), ctypes.c_void_p
+]
+_setupapi.SetupDiGetDeviceInterfaceDetailW.restype = wintypes.BOOL
+
+_setupapi.SetupDiDestroyDeviceInfoList.argtypes = [ctypes.c_void_p]
+_setupapi.SetupDiDestroyDeviceInfoList.restype = wintypes.BOOL
+
+_kernel32.CreateFileW.argtypes = [
+    wintypes.LPCWSTR, wintypes.DWORD, wintypes.DWORD,
+    ctypes.c_void_p, wintypes.DWORD, wintypes.DWORD, ctypes.c_void_p
+]
+_kernel32.CreateFileW.restype = ctypes.c_void_p
+
+_kernel32.CloseHandle.argtypes = [ctypes.c_void_p]
+_kernel32.CloseHandle.restype = wintypes.BOOL
+
+
 # Callbacks DirectOutput (__stdcall via WINFUNCTYPE)
 _PFN_DEVICE_CHANGE = ctypes.WINFUNCTYPE(None, ctypes.c_void_p, ctypes.c_bool, ctypes.c_void_p)
 _PFN_ENUMERATE = ctypes.WINFUNCTYPE(None, ctypes.c_void_p, ctypes.c_void_p)
 
 
+# ---------------------------------------------------------------------------
+# Utilitários de cor e pacotes
+# ---------------------------------------------------------------------------
 def _guid_to_key(g: _GUID) -> str:
-    """Converte GUID Win32 para o mesmo formato de directinput8_backend._guid_to_key."""
     d4 = "".join(f"{b:02X}" for b in g.Data4)
     return f"{g.Data1:08X}-{g.Data2:04X}-{g.Data3:04X}-{d4}"
 
 
 def _guid_to_standard_str(g: _GUID) -> str:
-    """Converte GUID Win32 para formato padrão 8-4-4-4-12 em maiúsculas."""
     d4_hi = "".join(f"{b:02X}" for b in g.Data4[:2])
     d4_lo = "".join(f"{b:02X}" for b in g.Data4[2:])
     return f"{g.Data1:08X}-{g.Data2:04X}-{g.Data3:04X}-{d4_hi}-{d4_lo}"
@@ -120,6 +243,195 @@ def rgb_to_int24(r: int, g: int, b: int) -> int:
     return ((max(0, min(255, int(r))) & 0xFF) << 16) | \
            ((max(0, min(255, int(g))) & 0xFF) << 8) | \
            (max(0, min(255, int(b))) & 0xFF)
+
+
+def build_x56_hid_rgb_packets(
+    hex_color: str,
+    brightness: int,
+    report_len: int = X56_HID_FEATURE_LEN,
+) -> tuple[bytes, bytes]:
+    """
+    Constrói os 2 pacotes USB HID Feature Report de 64 bytes para a Interface 2 (MI_02) do X56:
+      1) Report ID 0x09: [0x09, 0x00, 0x03, R_scaled, G_scaled, B_scaled, 0x00...]
+      2) Report ID 0x01: [0x01, 0x01, 0x00...] (commit / aplicar cor no firmware do X56)
+    """
+    r, g, b, _ = parse_hex_color(hex_color)
+    br = max(0, min(100, int(brightness)))
+    scale = br / 100.0
+    r_eff = max(0, min(255, int(round(r * scale))))
+    g_eff = max(0, min(255, int(round(g * scale))))
+    b_eff = max(0, min(255, int(round(b * scale))))
+
+    size = max(64, int(report_len or 64))
+    pkt_color = bytearray(size)
+    pkt_color[0] = 0x09
+    pkt_color[1] = 0x00
+    pkt_color[2] = 0x03
+    pkt_color[3] = r_eff
+    pkt_color[4] = g_eff
+    pkt_color[5] = b_eff
+
+    pkt_commit = bytearray(size)
+    pkt_commit[0] = 0x01
+    pkt_commit[1] = 0x01
+    return bytes(pkt_color), bytes(pkt_commit)
+
+
+def _open_hid_handle(path: str) -> Optional[int]:
+    """Abre um caminho HID do Windows tentando RW primeiro e depois acesso 0 (permitido para HidD_SetFeature)."""
+    for access in (GENERIC_READ | GENERIC_WRITE, 0):
+        h = _kernel32.CreateFileW(
+            path,
+            access,
+            FILE_SHARE_READ | FILE_SHARE_WRITE,
+            None,
+            OPEN_EXISTING,
+            0,
+            None,
+        )
+        if h and h != INVALID_HANDLE_VALUE:
+            return int(h)
+    return None
+
+
+def enumerate_x56_hid_rgb_interfaces() -> list[dict]:
+    """
+    Descobre todas as interfaces USB HID de controlo RGB (MI_02 / UsagePage 0xFF00 / FeatureLen=64)
+    do Logitech G / Saitek X56 Stick (PID 0x2221) e Throttle (PID 0xA221) diretamente via SetupAPI.
+    Funciona sem qualquer driver Logitech ou DirectOutput.dll!
+    """
+    found: list[dict] = []
+    hid_guid = _GUID()
+    _hid.HidD_GetHidGuid(ctypes.byref(hid_guid))
+
+    dev_info = _setupapi.SetupDiGetClassDevsW(
+        ctypes.byref(hid_guid), None, None, DIGCF_DEVICEINTERFACE | DIGCF_PRESENT
+    )
+    if not dev_info or dev_info == INVALID_HANDLE_VALUE:
+        return found
+
+    idx = 0
+    seen_paths: set[str] = set()
+    try:
+        while True:
+            if_data = _SP_DEVICE_INTERFACE_DATA()
+            if_data.cbSize = ctypes.sizeof(_SP_DEVICE_INTERFACE_DATA)
+            if not _setupapi.SetupDiEnumDeviceInterfaces(
+                dev_info, None, ctypes.byref(hid_guid), idx, ctypes.byref(if_data)
+            ):
+                break
+            idx += 1
+
+            req_size = wintypes.DWORD(0)
+            _setupapi.SetupDiGetDeviceInterfaceDetailW(
+                dev_info, ctypes.byref(if_data), None, 0, ctypes.byref(req_size), None
+            )
+            if req_size.value <= 4:
+                continue
+
+            buf = ctypes.create_string_buffer(req_size.value)
+            ctypes.cast(buf, ctypes.POINTER(wintypes.DWORD))[0] = (
+                8 if ctypes.sizeof(ctypes.c_void_p) == 8 else 6
+            )
+            if not _setupapi.SetupDiGetDeviceInterfaceDetailW(
+                dev_info, ctypes.byref(if_data), buf, req_size.value, None, None
+            ):
+                continue
+
+            path = ctypes.wstring_at(ctypes.addressof(buf) + 4)
+            pl = path.lower()
+            if pl in seen_paths:
+                continue
+
+            # Filtra rapidamente por VID_0738 (ou 046D) + PID_2221 / PID_A221
+            if not (("vid_0738" in pl or "vid_046d" in pl) and ("pid_2221" in pl or "pid_a221" in pl)):
+                continue
+
+            h = _open_hid_handle(path)
+            if not h:
+                continue
+
+            try:
+                attrs = _HIDD_ATTRIBUTES()
+                attrs.Size = ctypes.sizeof(_HIDD_ATTRIBUTES)
+                vid = 0x0738 if "vid_0738" in pl else 0x046D
+                pid = X56_STICK_PID if "pid_2221" in pl else X56_THROTTLE_PID
+                if _hid.HidD_GetAttributes(ctypes.c_void_p(h), ctypes.byref(attrs)):
+                    vid = int(attrs.VendorID)
+                    pid = int(attrs.ProductID)
+
+                if vid not in X56_VIDS or pid not in (X56_STICK_PID, X56_THROTTLE_PID):
+                    continue
+
+                usage_page = 0
+                usage = 0
+                feat_len = 0
+                ppd = ctypes.c_void_p(0)
+                if _hid.HidD_GetPreparsedData(ctypes.c_void_p(h), ctypes.byref(ppd)) and ppd.value:
+                    try:
+                        caps = _HIDP_CAPS()
+                        if _hid.HidP_GetCaps(ppd, ctypes.byref(caps)) == HIDP_STATUS_SUCCESS:
+                            usage_page = int(caps.UsagePage)
+                            usage = int(caps.Usage)
+                            feat_len = int(caps.FeatureReportByteLength)
+                    finally:
+                        _hid.HidD_FreePreparsedData(ppd)
+
+                # Interface 2 (MI_02) de controlo RGB do X56 tem UsagePage 0xFF00 e FeatureReportByteLength == 64
+                is_ctrl_if = (
+                    (usage_page == X56_HID_USAGE_PAGE_CTRL and feat_len >= 64)
+                    or ("mi_02" in pl and feat_len >= 64)
+                )
+                if not is_ctrl_if:
+                    continue
+
+                seen_paths.add(pl)
+                found.append({
+                    "path": path,
+                    "vid": vid,
+                    "pid": pid,
+                    "role": "stick" if pid == X56_STICK_PID else "throttle",
+                    "usage_page": usage_page,
+                    "usage": usage,
+                    "feature_len": feat_len or X56_HID_FEATURE_LEN,
+                })
+            finally:
+                _kernel32.CloseHandle(ctypes.c_void_p(h))
+    finally:
+        _setupapi.SetupDiDestroyDeviceInfoList(dev_info)
+
+    return found
+
+
+def send_x56_hid_rgb(path: str, hex_color: str, brightness: int, feature_len: int = 64) -> tuple[bool, str]:
+    """Envia os 2 Feature Reports USB HID (0x09 cor + 0x01 commit) diretamente para a interface MI_02 do X56."""
+    h = _open_hid_handle(path)
+    if not h:
+        err = ctypes.get_last_error()
+        return False, f"CreateFileW falhou (Win32={err})"
+
+    try:
+        pkt_color, pkt_commit = build_x56_hid_rgb_packets(hex_color, brightness, feature_len)
+        buf_c = (ctypes.c_ubyte * len(pkt_color)).from_buffer_copy(pkt_color)
+        ok1 = bool(_hid.HidD_SetFeature(ctypes.c_void_p(h), ctypes.byref(buf_c), len(pkt_color)))
+        if not ok1:
+            err1 = ctypes.get_last_error()
+            return False, f"HidD_SetFeature(0x09) falhou (Win32={err1})"
+
+        time.sleep(0.010)
+
+        buf_k = (ctypes.c_ubyte * len(pkt_commit)).from_buffer_copy(pkt_commit)
+        ok2 = bool(_hid.HidD_SetFeature(ctypes.c_void_p(h), ctypes.byref(buf_k), len(pkt_commit)))
+        if not ok2:
+            # Em alguns firmwares o pacote 0x09 já aplica a cor mesmo se 0x01 retornar erro
+            err2 = ctypes.get_last_error()
+            return True, f"HidD_SetFeature(0x09 OK; 0x01 Win32={err2})"
+
+        return True, ""
+    except Exception as e:
+        return False, f"Erro HID SetFeature: {e}"
+    finally:
+        _kernel32.CloseHandle(ctypes.c_void_p(h))
 
 
 def _get_file_version(dll_path: str) -> tuple[int, int, int, int]:
@@ -166,10 +478,10 @@ def find_directoutput_dll() -> Optional[str]:
     """Localiza o ficheiro oficial DirectOutput.dll dos drivers Logitech / Saitek X56."""
     candidates: list[str] = []
 
-    # 1. Registo do Windows (chave oficial criada pelo instalador Logitech/Saitek)
+    # 1. Registo do Windows (Saitek\DirectOutput é a chave usada pelo X56 mesmo em drivers Logitech!)
     reg_paths = [
-        r"SOFTWARE\Logitech\DirectOutput",
         r"SOFTWARE\Saitek\DirectOutput",
+        r"SOFTWARE\Logitech\DirectOutput",
         r"SOFTWARE\Mad Catz\DirectOutput",
     ]
     access_flags = [
@@ -188,7 +500,7 @@ def find_directoutput_dll() -> Optional[str]:
             except OSError:
                 continue
 
-    # 2. Caminhos padrão de instalação Logitech / Saitek / Mad Catz (64-bit)
+    # 2. Caminhos padrão Logitech / Saitek / Mad Catz (64-bit)
     prog_files = os.environ.get("ProgramFiles", r"C:\Program Files")
     windir = os.environ.get("WINDIR", r"C:\Windows")
     static_paths = [
@@ -211,25 +523,32 @@ def find_directoutput_dll() -> Optional[str]:
 
 class X56RGBController:
     """
-    Controlador RGB nativo para o Logitech G / Saitek X56 Rhino HOTAS via DirectOutput.dll.
-    Gerencia cor de 24-bit, brilho 0-100%, ligação/separação Stick+Throttle e Auto-Sync de perfis.
+    Controlador Dual-Engine RGB para o Logitech G / Saitek X56 Rhino HOTAS:
+      - Motor 1 (Direto, zero drivers): USB HID Feature Reports na Interface 2 (MI_02 / 0xFF00)
+      - Motor 2 (Oficial Logitech/Saitek): DirectOutput.dll com ciclo AddPage -> SetLed -> RemovePage
     """
 
     def __init__(self, initial_settings: Optional[dict] = None):
         self._lock = threading.RLock()
+
+        # Estado Motor DirectOutput.dll
         self._dll = None
         self._dll_path: Optional[str] = None
         self._dll_version: tuple[int, int, int, int] = (0, 0, 0, 0)
         self._dll_dir_handle = None
         self._initialized: bool = False
         self._use_4arg_addpage: bool = False
-        self._last_error: str = ""
-
-        # Dispositivos DirectOutput enumerados: {int(hDevice): {handle, role, type_guid, instance_guid, page_added}}
         self._devices: dict[int, dict] = {}
         self._di_devices_cache: list[dict] = []
 
-        # Mantém referências vivas aos callbacks ctypes (impede GC enquanto a DLL os referencia)
+        # Estado Motor USB HID Direto (MI_02)
+        self._hid_devices: list[dict] = []
+
+        # Diagnóstico
+        self._last_error: str = ""
+        self._last_backend_used: str = ""
+
+        # Mantém referências vivas aos callbacks ctypes DirectOutput
         self._cb_device_change = _PFN_DEVICE_CHANGE(self._on_device_change)
         self._cb_enumerate = _PFN_ENUMERATE(self._on_device_enumerated)
 
@@ -253,11 +572,18 @@ class X56RGBController:
 
         self.on_state_change: Optional[Callable[[dict], None]] = None
 
-        # Tenta inicializar automaticamente (sem nunca levantar exceção se o driver não existir)
-        self._try_connect()
+        # Deteta ambos os motores ao arrancar (nunca levanta exceção se o X56 não estiver ligado)
+        self._scan_hid_devices_locked()
+        self._try_connect_directoutput()
+
+    def _scan_hid_devices_locked(self) -> list[dict]:
+        try:
+            self._hid_devices = enumerate_x56_hid_rgb_interfaces()
+        except Exception:
+            self._hid_devices = []
+        return self._hid_devices
 
     def _configure_dll_prototypes(self, dll) -> None:
-        """Define argtypes/restype exatos (64-bit safe) das funções exportadas por DirectOutput.dll."""
         dll.DirectOutput_Initialize.argtypes = [wintypes.LPCWSTR]
         dll.DirectOutput_Initialize.restype = ctypes.c_long
 
@@ -277,8 +603,6 @@ class X56RGBController:
             dll.DirectOutput_GetDeviceInstance.argtypes = [ctypes.c_void_p, ctypes.POINTER(_GUID)]
             dll.DirectOutput_GetDeviceInstance.restype = ctypes.c_long
 
-        # v8.x (Logitech G X56): 3 argumentos (hDevice, dwPage, dwFlags)
-        # v7.x legado (Saitek SD6): 4 argumentos (hDevice, dwPage, wszDebugName, dwFlags)
         if self._use_4arg_addpage:
             dll.DirectOutput_AddPage.argtypes = [
                 ctypes.c_void_p, wintypes.DWORD, wintypes.LPCWSTR, wintypes.DWORD
@@ -297,8 +621,8 @@ class X56RGBController:
         ]
         dll.DirectOutput_SetLed.restype = ctypes.c_long
 
-    def _try_connect(self) -> bool:
-        """Carrega DirectOutput.dll, inicializa a sessão e enumera dispositivos X56 ligados."""
+    def _try_connect_directoutput(self) -> bool:
+        """Inicializa DirectOutput.dll seguindo a ordem exata de X56.cs (Initialize -> Enumerate -> RegisterCallback)."""
         with self._lock:
             if self._initialized and self._dll is not None:
                 return True
@@ -316,11 +640,9 @@ class X56RGBController:
                             pass
                     self._dll_version = _get_file_version(dll_path)
                     major = self._dll_version[0]
-                    # X56 usa sempre DirectOutput v8+ (3 args); apenas v1..v7 usam 4 args
                     self._use_4arg_addpage = (0 < major <= 7)
                     dll = ctypes.WinDLL(dll_path)
                 else:
-                    # Última tentativa: DLL diretamente no PATH do sistema
                     self._dll_version = (0, 0, 0, 0)
                     self._use_4arg_addpage = False
                     dll = ctypes.WinDLL("DirectOutput.dll")
@@ -328,29 +650,24 @@ class X56RGBController:
             except OSError:
                 self._dll = None
                 self._initialized = False
-                self._last_error = (
-                    "DirectOutput.dll não encontrada. Instala o software/driver oficial "
-                    "Logitech X56 H.O.T.A.S. para ativar o controlo RGB."
-                )
                 return False
 
             try:
                 self._configure_dll_prototypes(dll)
                 hr = dll.DirectOutput_Initialize("SC_Warthog_Commander")
                 if hr != 0:
-                    self._last_error = f"DirectOutput_Initialize falhou (HRESULT=0x{hr & 0xFFFFFFFF:08X})"
+                    self._last_error = f"DirectOutput_Initialize falhou (0x{hr & 0xFFFFFFFF:08X})"
                     self._dll = None
                     self._initialized = False
                     return False
 
                 self._dll = dll
                 self._initialized = True
-                self._last_error = ""
                 self._devices.clear()
 
-                # Regista callback de ligação/desligação a quente e enumera já ligados
-                dll.DirectOutput_RegisterDeviceCallback(self._cb_device_change, None)
+                # Ordem exata verificada em X56.cs: Enumerate primeiro, depois RegisterDeviceCallback
                 dll.DirectOutput_Enumerate(self._cb_enumerate, None)
+                dll.DirectOutput_RegisterDeviceCallback(self._cb_device_change, None)
                 self._reclassify_devices_locked()
                 return True
             except Exception as e:
@@ -360,13 +677,11 @@ class X56RGBController:
                 return False
 
     def _on_device_enumerated(self, h_device, _p_ctxt):
-        """Callback síncrono disparado por DirectOutput_Enumerate para cada dispositivo ligado."""
         if not h_device:
             return
         self._register_handle(int(h_device))
 
     def _on_device_change(self, h_device, b_added, _p_ctxt):
-        """Callback assíncrono disparado quando um dispositivo DirectOutput é ligado ou desligado."""
         if not h_device:
             return
         h_int = int(h_device)
@@ -374,10 +689,12 @@ class X56RGBController:
             self._register_handle(h_int)
             with self._lock:
                 self._reclassify_devices_locked()
+                self._scan_hid_devices_locked()
             self.apply_to_hardware()
         else:
             with self._lock:
                 self._devices.pop(h_int, None)
+                self._scan_hid_devices_locked()
         self._emit_state()
 
     def _register_handle(self, h_int: int) -> None:
@@ -394,7 +711,6 @@ class X56RGBController:
             except Exception:
                 pass
 
-            # Ignora explicitamente X52 Pro / FIP caso o utilizador também os tenha ligados
             if type_guid_std in _NON_X56_DEVICE_TYPE_GUIDS:
                 return
 
@@ -406,97 +722,80 @@ class X56RGBController:
             except Exception:
                 pass
 
+            # Identifica diretamente pelos GUIDs oficiais do X56 (de X56.cs)
+            role = "x56"
+            if type_guid_std == X56_THROTTLE_TYPE_GUID:
+                role = "throttle"
+            elif type_guid_std == X56_STICK_TYPE_GUID:
+                role = "stick"
+
             self._devices[h_int] = {
                 "handle": h_int,
-                "role": "x56",
+                "role": role,
                 "type_guid": type_guid_std,
                 "instance_guid": inst_guid_key,
-                "page_added": False,
             }
-            self._ensure_page_locked(h_int)
-
-    def _ensure_page_locked(self, h_int: int) -> bool:
-        """Cria e ativa a página DirectOutput (ID=1) no dispositivo X56."""
-        info = self._devices.get(h_int)
-        if not info or not self._dll:
-            return False
-        if info.get("page_added"):
-            return True
-        try:
-            h_ptr = ctypes.c_void_p(h_int)
-            if self._use_4arg_addpage:
-                hr = self._dll.DirectOutput_AddPage(h_ptr, X56_PAGE_ID, "SC_RGB", FLAG_SET_AS_ACTIVE)
-            else:
-                hr = self._dll.DirectOutput_AddPage(h_ptr, X56_PAGE_ID, FLAG_SET_AS_ACTIVE)
-            # S_OK (0) ou ERROR_ALREADY_EXISTS (0x800700B7) significa que a página 1 está pronta
-            if hr == 0 or (hr & 0xFFFFFFFF) == 0x800700B7:
-                info["page_added"] = True
-                return True
-            self._last_error = f"DirectOutput_AddPage retornou 0x{hr & 0xFFFFFFFF:08X}"
-        except Exception as e:
-            self._last_error = f"Erro AddPage: {e}"
-        return False
 
     def _reclassify_devices_locked(self) -> None:
-        """Associa cada handle DirectOutput ao papel 'stick' ou 'throttle' via DirectInput8."""
+        """Refina a classificação Stick vs Throttle usando GUID oficial DirectOutput + GUID DirectInput8."""
         if not self._devices:
             return
 
         di_by_guid: dict[str, dict] = {}
-        x56_di_roles: list[str] = []
         for d in self._di_devices_cache or []:
             gkey = str(d.get("guid_key") or d.get("slot") or "").upper()
             if gkey:
                 di_by_guid[gkey] = d
-            if d.get("kit") == "saitek_x56" or d.get("pid") in (0x2221, 0xA221):
-                r = "stick" if d.get("pid") == 0x2221 else ("throttle" if d.get("pid") == 0xA221 else d.get("role", "x56"))
-                x56_di_roles.append(r)
 
         assigned_roles: set[str] = set()
         unmatched: list[dict] = []
 
         for info in self._devices.values():
+            if info.get("type_guid") == X56_THROTTLE_TYPE_GUID:
+                info["role"] = "throttle"
+                assigned_roles.add("throttle")
+                continue
+            if info.get("type_guid") == X56_STICK_TYPE_GUID:
+                info["role"] = "stick"
+                assigned_roles.add("stick")
+                continue
+
             inst = (info.get("instance_guid") or "").upper()
             di = di_by_guid.get(inst) if inst else None
             if di:
-                if di.get("pid") == 0x2221 or di.get("role") == "stick":
+                if di.get("pid") == X56_STICK_PID or di.get("role") == "stick":
                     info["role"] = "stick"
                     assigned_roles.add("stick")
                     continue
-                if di.get("pid") == 0xA221 or di.get("role") == "throttle":
+                if di.get("pid") == X56_THROTTLE_PID or di.get("role") == "throttle":
                     info["role"] = "throttle"
                     assigned_roles.add("throttle")
                     continue
             unmatched.append(info)
 
-        # Fallback limpo caso DirectOutput_GetDeviceInstance não tenha correspondido ao GUID DI8
-        if unmatched:
-            if len(unmatched) == 1 and len(x56_di_roles) == 1:
-                unmatched[0]["role"] = x56_di_roles[0]
+        for info in unmatched:
+            if "throttle" not in assigned_roles:
+                info["role"] = "throttle"
+                assigned_roles.add("throttle")
+            elif "stick" not in assigned_roles:
+                info["role"] = "stick"
+                assigned_roles.add("stick")
             else:
-                for info in unmatched:
-                    if "throttle" not in assigned_roles:
-                        info["role"] = "throttle"
-                        assigned_roles.add("throttle")
-                    elif "stick" not in assigned_roles:
-                        info["role"] = "stick"
-                        assigned_roles.add("stick")
-                    else:
-                        info["role"] = "x56"
+                info["role"] = "x56"
 
     def sync_di_devices(self, di_devices: Optional[list[dict]]) -> None:
-        """Atualiza a tabela de GUIDs DirectInput8 para identificar Stick vs Throttle."""
         with self._lock:
             self._di_devices_cache = list(di_devices or [])
             self._reclassify_devices_locked()
 
     def rescan(self, di_devices: Optional[list[dict]] = None) -> dict:
-        """Re-deteta DirectOutput.dll e dispositivos X56 ligados, aplicando a cor atual."""
+        """Re-deteta interfaces USB HID MI_02 e dispositivos DirectOutput.dll do X56 e aplica a cor."""
         with self._lock:
             if di_devices is not None:
                 self._di_devices_cache = list(di_devices)
+            self._scan_hid_devices_locked()
             if not self._initialized or self._dll is None:
-                self._try_connect()
+                self._try_connect_directoutput()
             else:
                 try:
                     self._devices.clear()
@@ -509,12 +808,18 @@ class X56RGBController:
         self._emit_state()
         return status
 
-    def _send_rgb_to_handle_locked(self, h_int: int, hex_color: str, brightness: int) -> bool:
-        """Envia brilho (dwIndex=0) e cor 24-bit (dwIndex=1) para um handle X56."""
+    def _add_page_locked(self, h_ptr) -> int:
+        if self._use_4arg_addpage:
+            return self._dll.DirectOutput_AddPage(h_ptr, X56_PAGE_ID, "SC_RGB", FLAG_SET_AS_ACTIVE)
+        return self._dll.DirectOutput_AddPage(h_ptr, X56_PAGE_ID, FLAG_SET_AS_ACTIVE)
+
+    def _send_directoutput_to_handle_locked(self, h_int: int, hex_color: str, brightness: int) -> tuple[bool, str]:
+        """
+        Executa a transação exata de X56.cs (SetLedObject):
+          AddPage(h, 1, 1) -> SetLed(h, 1, 0, brightness) -> SetLed(h, 1, 1, rgb24) -> RemovePage(h, 1)
+        """
         if not self._dll or not self._initialized:
-            return False
-        if not self._ensure_page_locked(h_int):
-            return False
+            return False, "DirectOutput não inicializado"
 
         r, g, b, _ = parse_hex_color(hex_color)
         br = max(0, min(100, int(brightness)))
@@ -524,35 +829,95 @@ class X56RGBController:
 
         h_ptr = ctypes.c_void_p(h_int)
         try:
+            hr_add = self._add_page_locked(h_ptr)
+            # Se a página 1 já existia (E_INVALIDARG 0x80070057), remove e volta a adicionar ativa!
+            if hr_add != 0:
+                self._dll.DirectOutput_RemovePage(h_ptr, X56_PAGE_ID)
+                hr_add = self._add_page_locked(h_ptr)
+
             hr_br = self._dll.DirectOutput_SetLed(h_ptr, X56_PAGE_ID, X56_LED_IDX_BRIGHTNESS, br)
-            time.sleep(0.004)
             hr_col = self._dll.DirectOutput_SetLed(h_ptr, X56_PAGE_ID, X56_LED_IDX_COLOR, rgb_int)
+            self._dll.DirectOutput_RemovePage(h_ptr, X56_PAGE_ID)
+
             if hr_br == 0 and hr_col == 0:
-                self._last_error = ""
-                return True
-            self._last_error = f"SetLed HRESULT br=0x{hr_br & 0xFFFFFFFF:08X} col=0x{hr_col & 0xFFFFFFFF:08X}"
-            return False
+                return True, ""
+            return False, (
+                f"DirectOutput SetLed add=0x{hr_add & 0xFFFFFFFF:08X} "
+                f"br=0x{hr_br & 0xFFFFFFFF:08X} col=0x{hr_col & 0xFFFFFFFF:08X}"
+            )
         except Exception as e:
-            self._last_error = f"Erro SetLed: {e}"
-            return False
+            return False, f"Erro DirectOutput SetLed: {e}"
+
+    def _target_color_for_role(self, role: str) -> str:
+        if self.linked:
+            return self.throttle_color
+        return self.stick_color if role == "stick" else self.throttle_color
 
     def apply_to_hardware(self) -> int:
-        """Aplica a configuração RGB atual a todos os dispositivos X56 conectados."""
-        sent = 0
+        """
+        Aplica a cor e brilho atuais ao X56 usando AMBOS os motores disponíveis:
+          1) DirectOutput.dll (transação AddPage -> SetLed -> RemovePage) se presente
+          2) USB HID Feature Report direto (MI_02: 0x09 cor + 0x01 commit) — funciona SEM drivers!
+        """
+        sent_do = 0
+        sent_hid = 0
+        errors: list[str] = []
+
         with self._lock:
-            if not self._initialized or not self._dll or not self._devices:
-                return 0
-            for h_int, info in list(self._devices.items()):
-                role = info.get("role", "x56")
-                if self.linked:
-                    target_hex = self.throttle_color
-                elif role == "stick":
-                    target_hex = self.stick_color
-                else:
-                    target_hex = self.throttle_color
-                if self._send_rgb_to_handle_locked(h_int, target_hex, self.brightness):
-                    sent += 1
-        return sent
+            # Motor 1: DirectOutput.dll (atualiza serviço Logitech se ativo)
+            if self._initialized and self._dll and self._devices:
+                for h_int, info in list(self._devices.items()):
+                    target_hex = self._target_color_for_role(info.get("role", "x56"))
+                    ok, err = self._send_directoutput_to_handle_locked(h_int, target_hex, self.brightness)
+                    if ok:
+                        sent_do += 1
+                    elif err:
+                        errors.append(err)
+
+            # Motor 2: Direct USB HID Feature Reports (MI_02 / UsagePage 0xFF00)
+            if not self._hid_devices:
+                self._scan_hid_devices_locked()
+
+            if self._hid_devices:
+                failed_hid = False
+                for dev in list(self._hid_devices):
+                    target_hex = self._target_color_for_role(dev.get("role", "x56"))
+                    ok, err = send_x56_hid_rgb(
+                        dev["path"], target_hex, self.brightness, dev.get("feature_len", 64)
+                    )
+                    if ok:
+                        sent_hid += 1
+                    else:
+                        failed_hid = True
+                        if err:
+                            errors.append(err)
+
+                # Se algum handle USB ficou obsoleto (replug), re-escaneia uma vez e reenvia
+                if failed_hid and sent_hid == 0:
+                    self._scan_hid_devices_locked()
+                    for dev in list(self._hid_devices):
+                        target_hex = self._target_color_for_role(dev.get("role", "x56"))
+                        ok, err = send_x56_hid_rgb(
+                            dev["path"], target_hex, self.brightness, dev.get("feature_len", 64)
+                        )
+                        if ok:
+                            sent_hid += 1
+                        elif err:
+                            errors.append(err)
+
+            if sent_hid > 0 and sent_do > 0:
+                self._last_backend_used = "hid+directoutput"
+                self._last_error = ""
+            elif sent_hid > 0:
+                self._last_backend_used = "usb_hid"
+                self._last_error = ""
+            elif sent_do > 0:
+                self._last_backend_used = "directoutput"
+                self._last_error = ""
+            elif errors:
+                self._last_error = errors[-1]
+
+        return max(sent_hid, sent_do)
 
     def update_settings(
         self,
@@ -630,30 +995,56 @@ class X56RGBController:
             }
 
     def get_status(self) -> dict:
-        """Devolve estado completo para enviar ao Dashboard via WebSocket."""
+        """Devolve estado completo dos dois motores RGB (USB HID Direto + DirectOutput) para o Dashboard."""
         with self._lock:
-            roles = [d.get("role", "x56") for d in self._devices.values()]
-            dev_count = len(self._devices)
+            hid_roles = [d.get("role", "x56") for d in self._hid_devices]
+            do_roles = [d.get("role", "x56") for d in self._devices.values()]
+            hid_count = len(self._hid_devices)
+            do_count = len(self._devices)
+            dev_count = max(hid_count, do_count)
             ver_str = ".".join(str(x) for x in self._dll_version) if any(self._dll_version) else ""
 
-            if not self._initialized:
-                status_code = "no_driver"
-                message = self._last_error or "Driver Logitech DirectOutput não detetado."
-            elif dev_count == 0:
-                status_code = "waiting_device"
-                message = "DirectOutput ativo — liga o Logitech X56 por USB e clica em Re-detetar."
-            else:
+            stick_ready = ("stick" in hid_roles) or ("stick" in do_roles) or (dev_count >= 2)
+            throttle_ready = ("throttle" in hid_roles) or ("throttle" in do_roles) or (dev_count >= 1)
+
+            mods = []
+            if stick_ready:
+                mods.append("Manche")
+            if throttle_ready:
+                mods.append("Manete")
+            mods_txt = " + ".join(mods) if mods else f"{dev_count} módulo(s)"
+
+            if hid_count > 0 and do_count > 0:
                 status_code = "ready"
-                message = f"Logitech DirectOutput ligado ({dev_count} módulo{'s' if dev_count != 1 else ''} RGB pronto{'s' if dev_count != 1 else ''})."
+                backend_label = "USB HID + DIRECTOUTPUT"
+                message = f"RGB Dual-Engine ativo ({mods_txt}) — USB HID MI_02 + DirectOutput"
+            elif hid_count > 0:
+                status_code = "ready"
+                backend_label = "USB HID DIRETO"
+                message = f"USB HID Direto ativo ({mods_txt}) — controlo nativo sem drivers Logitech!"
+            elif do_count > 0:
+                status_code = "ready"
+                backend_label = "DIRECTOUTPUT"
+                message = f"Logitech DirectOutput ativo ({mods_txt})."
+            else:
+                status_code = "waiting_device"
+                backend_label = "AGUARDANDO X56"
+                message = "Liga o Logitech X56 por USB e clica em 🔄 (funciona via USB HID direto ou DirectOutput)."
+
+            if self._last_error and status_code == "ready":
+                message = f"{message} • Nota: {self._last_error}"
 
             return {
                 "status": status_code,
+                "backend": backend_label,
+                "hid_count": hid_count,
+                "directoutput_count": do_count,
                 "dll_found": bool(self._initialized),
                 "dll_path": self._dll_path or "",
                 "dll_version": ver_str,
                 "devices_count": dev_count,
-                "stick_ready": ("stick" in roles) or (dev_count >= 2),
-                "throttle_ready": ("throttle" in roles) or (dev_count >= 1),
+                "stick_ready": stick_ready,
+                "throttle_ready": throttle_ready,
                 "linked": self.linked,
                 "color": self.throttle_color,
                 "stick_color": self.stick_color,
@@ -674,20 +1065,15 @@ class X56RGBController:
                 pass
 
     def close(self) -> None:
-        """Remove páginas DirectOutput e encerra a sessão de forma limpa."""
+        """Encerra a sessão DirectOutput de forma limpa."""
         with self._lock:
             if self._dll and self._initialized:
-                for h_int, info in list(self._devices.items()):
-                    if info.get("page_added"):
-                        try:
-                            self._dll.DirectOutput_RemovePage(ctypes.c_void_p(h_int), X56_PAGE_ID)
-                        except Exception:
-                            pass
                 try:
                     self._dll.DirectOutput_Deinitialize()
                 except Exception:
                     pass
             self._devices.clear()
+            self._hid_devices.clear()
             self._initialized = False
             self._dll = None
             if self._dll_dir_handle is not None:
