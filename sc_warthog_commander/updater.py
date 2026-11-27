@@ -22,7 +22,7 @@ from typing import Optional, Tuple
 
 from config import get_app_dir
 
-APP_VERSION = "5.9.9"
+APP_VERSION = "5.9.10"
 APP_DIR = get_app_dir()
 BACKUP_DIR = os.path.join(APP_DIR, "backups")
 STATE_FILE = os.path.join(APP_DIR, "update_state.json")

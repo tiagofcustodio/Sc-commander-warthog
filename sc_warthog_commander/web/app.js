@@ -1010,9 +1010,19 @@ const X56_THROTTLE_VISUAL_GROUPS = [
   }
 ];
 
+const X56_GLOBAL_MODE_IDS = ['X56_THR_34', 'X56_THR_35', 'X56_THR_36'];
+const X56_MODE_DEFAULT_LABELS = {
+  X56_THR_34: '⚔️ Perfil M1',
+  X56_THR_35: '⛏️ Perfil M2',
+  X56_THR_36: '📦 Perfil S1'
+};
+
 function getKeyBadgeHtml(actionId) {
   const m = cachedMatrixMappings[actionId];
   if (!m) {
+    if (X56_MODE_DEFAULT_LABELS[actionId]) {
+      return `<span class="key-badge hold-pill" style="font-size:10px; padding:2px 6px;">${X56_MODE_DEFAULT_LABELS[actionId]}</span>`;
+    }
     return `<span class="key-badge dim" style="font-size:10px; opacity:0.75;">Nativo SC</span>`;
   }
   let html = '';
@@ -1026,6 +1036,8 @@ function getKeyBadgeHtml(actionId) {
     }
     parts.push(`<span class="key-badge" style="font-size:10px; padding:2px 5px;">${m.key}</span>`);
     html = parts.join(' + ');
+  } else if (X56_MODE_DEFAULT_LABELS[actionId]) {
+    html = `<span class="key-badge hold-pill" style="font-size:10px; padding:2px 6px;" title="Padrão: troca de perfil (clica Editar para atribuir tecla/macro)">${X56_MODE_DEFAULT_LABELS[actionId]}</span>`;
   } else {
     html = `<span class="key-badge dim" style="font-size:10px; opacity:0.75;">Nativo SC</span>`;
   }
@@ -1174,9 +1186,9 @@ const X56_COORDINATES = {
     '31': { x: 33.0, y: 20.0, num: 'BTN 31', name: 'Scroll Trás' },
     '32': { x: 77.5, y: 34.5, num: 'BTN 32', name: 'Mini-Stick Push' },
     '33': { x: 77.5, y: 26.8, num: 'BTN 33', name: 'SLD (Slide Switch Cinzento)' },
-    '34': { x: 22.5, y: 65.0, num: 'BTN 34', name: 'MODE M1 (Modo 1 / Combate)' },
-    '35': { x: 22.5, y: 67.8, num: 'BTN 35', name: 'MODE M2 (Modo 2 / Mineração)' },
-    '36': { x: 21.0, y: 70.2, num: 'BTN 36', name: 'MODE S1 (Modo 3 / Carga)' },
+    '34': { x: 23.8, y: 63.2, num: 'BTN 34', name: 'MODE M1 (Modo 1 / Combate)' },
+    '35': { x: 25.0, y: 67.6, num: 'BTN 35', name: 'MODE M2 (Modo 2 / Mineração)' },
+    '36': { x: 21.0, y: 71.8, num: 'BTN 36', name: 'MODE S1 (Modo 3 / Carga)' },
     'ax-EIXO_X':     { x: 40.0, y: 25.0, num: 'EIXO X', name: 'Alavanca Esq. (js2_x)' },
     'ax-EIXO_Y':     { x: 60.0, y: 25.0, num: 'EIXO Y', name: 'Alavanca Dir. (js2_y)' },
     'ax-SLIDER_1':   { x: 84.5, y: 14.5, num: 'SLIDER 1', name: 'Rotativo F (js2_slider1)' },
@@ -1308,6 +1320,10 @@ function renderVisualMapping() {
         : `<button class="edit-btn-pill" onclick="event.stopPropagation(); openKeyEditorModal('${item.actionId}')" title="Editar tecla e modificadores">✏️ Editar</button>
            <button class="btn-secondary" style="padding: 2px 7px; font-size: 11px; margin-left: 4px;" onclick="event.stopPropagation(); manualTrigger('${item.actionId}')" title="Testar envio de pulso DirectInput">▶</button>`;
 
+      const liveDesc = (!item.isAxis && cachedMatrixMappings[item.actionId] && cachedMatrixMappings[item.actionId].desc)
+        ? cachedMatrixMappings[item.actionId].desc
+        : item.desc;
+
       stickHtml += `
         <div id="${elId}" class="vmap-btn-row" 
              onmouseenter="showButtonPointer('stick', '${keyId}')"
@@ -1317,7 +1333,7 @@ function renderVisualMapping() {
           <div class="${idClass}">${item.num}</div>
           <div class="vmap-btn-content">
             <div class="vmap-btn-action">${item.name}</div>
-            <div class="vmap-btn-sub">${item.desc}</div>
+            <div class="vmap-btn-sub">${liveDesc}</div>
           </div>
           <div class="vmap-btn-right">
             ${keyBadge}
@@ -1350,6 +1366,10 @@ function renderVisualMapping() {
         : `<button class="edit-btn-pill" onclick="event.stopPropagation(); openKeyEditorModal('${item.actionId}')" title="Editar tecla e modificadores">✏️ Editar</button>
            <button class="btn-secondary" style="padding: 2px 7px; font-size: 11px; margin-left: 4px;" onclick="event.stopPropagation(); manualTrigger('${item.actionId}')" title="Testar envio de pulso DirectInput">▶</button>`;
 
+      const liveDesc = (!item.isAxis && cachedMatrixMappings[item.actionId] && cachedMatrixMappings[item.actionId].desc)
+        ? cachedMatrixMappings[item.actionId].desc
+        : item.desc;
+
       throttleHtml += `
         <div id="${elId}" class="vmap-btn-row" 
              onmouseenter="showButtonPointer('throttle', '${keyId}')"
@@ -1359,7 +1379,7 @@ function renderVisualMapping() {
           <div class="${idClass}">${item.num}</div>
           <div class="vmap-btn-content">
             <div class="vmap-btn-action">${item.name}</div>
-            <div class="vmap-btn-sub">${item.desc}</div>
+            <div class="vmap-btn-sub">${liveDesc}</div>
           </div>
           <div class="vmap-btn-right">
             ${keyBadge}
@@ -2314,8 +2334,18 @@ function getActionCategory(actionId) {
   if (actionId.endsWith('_SHIFT') || actionId.startsWith('S2_SHIFT') || actionId.startsWith('S1_SHIFT') || (actionId.startsWith('TMS_') && actionId.includes('SHIFT')) || (actionId.startsWith('DMS_') && actionId.includes('SHIFT')) || (actionId.startsWith('CMS_') && actionId.includes('SHIFT'))) {
     return { id: 'shift', label: 'Camada Shift S4', color: 'var(--neon-amber)' };
   }
-  if (actionId.startsWith('STICK_BTN_') || actionId.startsWith('TRIM_HAT_')) {
-    return { id: 'stick', label: 'Manche A-10C', color: 'var(--neon-green)' };
+  if (actionId.startsWith('STICK_BTN_') || actionId.startsWith('TRIM_HAT_') || actionId.startsWith('X56_STK_')) {
+    return { id: 'stick', label: actionId.startsWith('X56_STK_') ? 'Manche X56' : 'Manche A-10C', color: 'var(--neon-green)' };
+  }
+  if (X56_GLOBAL_MODE_IDS.includes(actionId)) {
+    return { id: 'throttle_base', label: 'X56 MODE (M1/M2/S1)', color: 'var(--neon-amber)' };
+  }
+  if (actionId.startsWith('X56_THR_')) {
+    const n = parseInt(actionId.slice(8), 10);
+    if ((n >= 1 && n <= 5) || (n >= 20 && n <= 33)) {
+      return { id: 'throttle_grips', label: 'Punho Manete X56', color: 'var(--neon-cyan)' };
+    }
+    return { id: 'throttle_base', label: 'Base Manete X56', color: '#88aaff' };
   }
   if (actionId.startsWith('CHINA_') || actionId.startsWith('MIC_') || actionId.startsWith('SLEW_') || 
       actionId.startsWith('LTB_') || actionId.startsWith('VISOR_') || actionId.startsWith('SPDBRK_') || 
@@ -2377,15 +2407,21 @@ function renderMatrixRows() {
 
     const modsArray = m.modifiers || [];
     const hasKey = Boolean(m.key && m.key.trim());
+    const hasMacro = Boolean(m.macro_id && cachedMacros[m.macro_id]);
     
     let keyBadgeHtml = '';
-    if (hasKey) {
+    if (hasMacro) {
+      const mac = cachedMacros[m.macro_id];
+      keyBadgeHtml = `<span class="key-badge macro-pill">${mac.icon || '⚡'} MACRO: ${mac.name || m.macro_id}</span>`;
+    } else if (hasKey) {
       const parts = [];
       for (const mod of modsArray) {
         parts.push(`<span class="key-badge mod">${mod}</span>`);
       }
       parts.push(`<span class="key-badge">${m.key}</span>`);
       keyBadgeHtml = parts.join(' + ');
+    } else if (X56_MODE_DEFAULT_LABELS[id]) {
+      keyBadgeHtml = `<span class="key-badge hold-pill">${X56_MODE_DEFAULT_LABELS[id]} (Padrão)</span>`;
     } else {
       keyBadgeHtml = `<span class="key-badge dim">Desativado / Nativo</span>`;
     }
@@ -2495,14 +2531,26 @@ function updateHoldDurationDisplay(val, fromNumberInput = false) {
 
 function updateModalPreview() {
   const key = document.getElementById('modal-input-key').value.trim().toUpperCase();
+  const macroId = (document.getElementById('modal-select-macro')?.value || '').trim();
   const alt = document.getElementById('modal-chk-alt').checked;
   const ctrl = document.getElementById('modal-chk-ctrl').checked;
   const shift = document.getElementById('modal-chk-shift').checked;
 
   const display = document.getElementById('modal-key-display');
+  if (macroId && cachedMacros[macroId]) {
+    const mac = cachedMacros[macroId];
+    display.textContent = `${mac.icon || '⚡'} MACRO: ${mac.name || macroId}`;
+    display.style.color = '#d8b4fe';
+    return;
+  }
   if (!key) {
-    display.textContent = 'NENHUMA (Nativo DirectInput)';
-    display.style.color = 'var(--text-dim)';
+    if (editingActionId && X56_MODE_DEFAULT_LABELS[editingActionId]) {
+      display.textContent = `${X56_MODE_DEFAULT_LABELS[editingActionId]} (ou clica acima p/ definir Tecla)`;
+      display.style.color = 'var(--neon-amber)';
+    } else {
+      display.textContent = 'NENHUMA (Nativo DirectInput)';
+      display.style.color = 'var(--text-dim)';
+    }
     return;
   }
 
@@ -2661,7 +2709,11 @@ function saveModalKey() {
     long_threshold_ms: longThresh
   };
 
-  if (CLIENT_PROFILES[currentProfile]) {
+  if (X56_GLOBAL_MODE_IDS.includes(editingActionId)) {
+    Object.values(CLIENT_PROFILES).forEach(p => {
+      if (p && p.mappings) p.mappings[editingActionId] = { ...cachedMatrixMappings[editingActionId] };
+    });
+  } else if (CLIENT_PROFILES[currentProfile]) {
     CLIENT_PROFILES[currentProfile].mappings[editingActionId] = { ...cachedMatrixMappings[editingActionId] };
   }
 
@@ -2679,6 +2731,8 @@ function clearCurrentModalKey() {
   document.getElementById('modal-chk-alt').checked = false;
   document.getElementById('modal-chk-ctrl').checked = false;
   document.getElementById('modal-chk-shift').checked = false;
+  const selMacro = document.getElementById('modal-select-macro');
+  if (selMacro) selMacro.value = '';
   updateModalPreview();
   saveModalKey();
 }
@@ -2689,6 +2743,7 @@ function quickClearKey(actionId) {
   if (!cachedMatrixMappings[actionId]) return;
   cachedMatrixMappings[actionId].key = '';
   cachedMatrixMappings[actionId].modifiers = [];
+  cachedMatrixMappings[actionId].macro_id = '';
 
   if (ws && ws.readyState === WebSocket.OPEN) {
     ws.send(JSON.stringify({
@@ -2696,6 +2751,7 @@ function quickClearKey(actionId) {
       action_id: actionId,
       key: '',
       modifiers: [],
+      macro_id: '',
       desc: cachedMatrixMappings[actionId].desc,
       hold_ms: cachedMatrixMappings[actionId].hold_ms || 60
     }));
@@ -2746,7 +2802,11 @@ function resetActiveProfileMappings() {
 function onMappingUpdated(data) {
   if (data.mappings) {
     cachedMatrixMappings = { ...data.mappings };
-    if (CLIENT_PROFILES[data.profile_id]) {
+    if (data.action_id && X56_GLOBAL_MODE_IDS.includes(data.action_id) && data.mapping) {
+      Object.values(CLIENT_PROFILES).forEach(p => {
+        if (p && p.mappings) p.mappings[data.action_id] = { ...data.mapping };
+      });
+    } else if (CLIENT_PROFILES[data.profile_id]) {
       CLIENT_PROFILES[data.profile_id].mappings = { ...data.mappings };
     }
     renderMatrixRows();

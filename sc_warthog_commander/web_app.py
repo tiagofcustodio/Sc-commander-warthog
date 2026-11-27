@@ -35,7 +35,7 @@ from dinput_reader import WarthogDeviceWatcher
 from switch_engine import SwitchEngine
 from warthog_leds import WarthogLEDController
 from x56_rgb import X56RGBController
-from profile_manager import ProfileManager
+from profile_manager import ProfileManager, GLOBAL_MODE_ACTION_IDS, PROFILE_ORDER
 from sc_process_monitor import StarCitizenProcessMonitor
 from tray_service import WarthogTrayIcon
 from actionmaps_fixer import (
@@ -605,7 +605,15 @@ async def websocket_endpoint(websocket: WebSocket):
                             "key_hit": f"{mod_str}{p_key} ({p_hold}ms)"
                         })
                 else:
-                    engine._dispatch_action(act_id, f"Teste Manual {act_id}")
+                    mode_btn_map = {"X56_THR_34": 34, "X56_THR_35": 35, "X56_THR_36": 36}
+                    if act_id in mode_btn_map:
+                        m_entry = engine.mappings.get(act_id) or {}
+                        if m_entry.get("key") or m_entry.get("macro_id"):
+                            engine._dispatch_action(act_id, f"Teste Manual {act_id}")
+                        else:
+                            engine._handle_x56_throttle_button(mode_btn_map[act_id], True)
+                    else:
+                        engine._dispatch_action(act_id, f"Teste Manual {act_id}")
 
             elif msg_type == "update_mapping":
                 act_id = data.get("action_id")
@@ -616,13 +624,24 @@ async def websocket_endpoint(websocket: WebSocket):
                     engine.mappings = pdata["mappings"]
 
                     custom_all = config.setdefault("custom_profile_mappings", {})
-                    custom_prof = custom_all.setdefault(active_pid, {})
-                    custom_prof[act_id] = updated_entry
+                    if act_id in GLOBAL_MODE_ACTION_IDS:
+                        for p in PROFILE_ORDER:
+                            custom_all.setdefault(p, {})[act_id] = dict(updated_entry)
+                    else:
+                        custom_prof = custom_all.setdefault(active_pid, {})
+                        custom_prof[act_id] = updated_entry
                     config["mappings"] = pdata["mappings"]
                     save_config(config)
 
                     mod_str = "+".join(updated_entry["modifiers"]) + "+" if updated_entry["modifiers"] else ""
-                    combo_lbl = f"{mod_str}{updated_entry['key']}" if updated_entry["key"] else "Desativado / Nativo XML"
+                    if updated_entry.get("macro_id"):
+                        combo_lbl = f"⚡ MACRO: {updated_entry['macro_id']}"
+                    elif updated_entry["key"]:
+                        combo_lbl = f"{mod_str}{updated_entry['key']} ({updated_entry.get('hold_ms', 60)}ms)"
+                    elif act_id in GLOBAL_MODE_ACTION_IDS:
+                        combo_lbl = "Padrão (Trocar Perfil)"
+                    else:
+                        combo_lbl = "Desativado / Nativo XML"
                     await hub.broadcast({
                         "type": "mapping_updated",
                         "profile_id": active_pid,

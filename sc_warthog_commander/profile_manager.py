@@ -9,6 +9,10 @@ from warthog_constants import DEFAULT_SC_MAPPINGS
 
 PROFILE_ORDER = ["combat", "mining", "cargo", "ground"]
 
+# Ações físicas globais do seletor rotativo MODE (M1/M2/S1) do X56:
+# Quando editadas, propagam-se por TODOS os perfis para não desaparecerem ao rodar o seletor!
+GLOBAL_MODE_ACTION_IDS = ("X56_THR_34", "X56_THR_35", "X56_THR_36")
+
 PROFILES = {
     "combat": {
         "id": "combat",
@@ -182,12 +186,13 @@ class ProfileManager:
 
     def load_custom_overrides(self, custom_overrides: dict):
         """Aplica mapeamentos personalizados guardados pelo utilizador em cada perfil (preservando hold_ms, macros e pressão longa)."""
+        global_mode_overrides = {}
         for pid, p_maps in custom_overrides.items():
             if pid in PROFILES and isinstance(p_maps, dict):
                 for act_id, m_val in p_maps.items():
                     if isinstance(m_val, dict):
                         cur = PROFILES[pid]["mappings"].get(act_id, {})
-                        PROFILES[pid]["mappings"][act_id] = {
+                        entry = {
                             "key": str(m_val.get("key", cur.get("key", ""))).strip().upper(),
                             "modifiers": [str(mod).strip().upper() for mod in m_val.get("modifiers", cur.get("modifiers", [])) if mod],
                             "desc": str(m_val.get("desc", cur.get("desc", act_id))),
@@ -199,6 +204,14 @@ class ProfileManager:
                             "long_macro_id": str(m_val.get("long_macro_id", cur.get("long_macro_id", ""))).strip(),
                             "long_threshold_ms": max(180, int(m_val.get("long_threshold_ms") or cur.get("long_threshold_ms", 450))),
                         }
+                        PROFILES[pid]["mappings"][act_id] = entry
+                        if act_id in GLOBAL_MODE_ACTION_IDS and (entry["key"] or entry["macro_id"]):
+                            global_mode_overrides[act_id] = dict(entry)
+
+        # Propaga teclas/macros personalizadas de M1/M2/S1 para todos os perfis
+        for act_id, entry in global_mode_overrides.items():
+            for pid in PROFILES:
+                PROFILES[pid]["mappings"][act_id] = dict(entry)
 
     def update_single_mapping(self, action_id: str, mapping_data: dict, profile_id: str = None) -> dict:
         """Atualiza uma única tecla/ação (incluindo Macro e Pressão Longa) no perfil especificado."""
@@ -208,15 +221,19 @@ class ProfileManager:
             "key": str(mapping_data.get("key", current.get("key", ""))).strip().upper(),
             "modifiers": [str(mod).strip().upper() for mod in mapping_data.get("modifiers", current.get("modifiers", [])) if mod],
             "desc": str(mapping_data.get("desc", current.get("desc", action_id))),
-            "hold_ms": int(mapping_data.get("hold_ms", current.get("hold_ms", 60))),
+            "hold_ms": max(20, int(mapping_data.get("hold_ms") or current.get("hold_ms", 60))),
             "macro_id": str(mapping_data.get("macro_id", current.get("macro_id", ""))).strip(),
             "long_key": str(mapping_data.get("long_key", current.get("long_key", ""))).strip().upper(),
             "long_modifiers": [str(mod).strip().upper() for mod in mapping_data.get("long_modifiers", current.get("long_modifiers", [])) if mod],
-            "long_hold_ms": int(mapping_data.get("long_hold_ms", current.get("long_hold_ms", 120))),
+            "long_hold_ms": max(20, int(mapping_data.get("long_hold_ms") or current.get("long_hold_ms", 120))),
             "long_macro_id": str(mapping_data.get("long_macro_id", current.get("long_macro_id", ""))).strip(),
-            "long_threshold_ms": int(mapping_data.get("long_threshold_ms", current.get("long_threshold_ms", 450))),
+            "long_threshold_ms": max(180, int(mapping_data.get("long_threshold_ms") or current.get("long_threshold_ms", 450))),
         }
-        PROFILES[pid]["mappings"][action_id] = entry
+        if action_id in GLOBAL_MODE_ACTION_IDS:
+            for p in PROFILES:
+                PROFILES[p]["mappings"][action_id] = dict(entry)
+        else:
+            PROFILES[pid]["mappings"][action_id] = entry
         return entry
 
     def update_bulk_mappings(self, mappings_dict: dict, profile_id: str = None) -> dict:
